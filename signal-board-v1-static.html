@@ -476,7 +476,7 @@ select:focus{border-color:var(--amber)}
             <path d="M1.8 10.6l2.5-3.8 2.4 2.3 2.4-5.2 2.2 3.5 2.9-2.2"/>
           </svg>
         </span>
-        <span class="r-brand-t"><b>AI运营组工作台</b><i>AI OPS WORKBENCH</i></span>
+        <span class="r-brand-t"><b id="brandName">AI运营组工作台</b><i id="brandSub">AI OPS WORKBENCH</i></span>
       </div>
 
       <nav class="nav" id="nav"></nav>
@@ -498,6 +498,7 @@ select:focus{border-color:var(--amber)}
       </button>
       <div class="crumb" id="crumb"></div>
       <div class="top-right">
+        <button class="mode-pill" id="modePill" type="button" title="访问模式">只读预览</button>
         <div class="stamp">数据截至 <b>09:00</b></div>
         <button class="icon-btn" id="theme" title="切换主题" aria-label="切换主题">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">

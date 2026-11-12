@@ -5,13 +5,13 @@ const uiState = () => (window.__sb = window.__sb || { open: {}, acctOpen: {} });
 function acctPanel(s, accts) {
   const rows = accts.length ? accts.map(a => `<tr>
       <td>${a.role ? chipP(a.role, a.role === '主账号' ? 'amber' : 'mute') : '<span class="dim">—</span>'}</td>
-      <td class="mono">${a.login ? esc(a.login) : '<span class="miss">未填</span>'}</td>
-      <td>${a.binder ? esc(a.binder) : '<span class="miss">未填</span>'}</td>
-      <td class="mono tail-cell">${a.tail ? esc(a.tail) : '<span class="dim">••••</span>'}</td>
-      <td>${esc(a.owner || '—')}</td>
-      <td>${esc(a.post || '—')}</td>
+      <td class="mono cell" data-cell="accounts:${esc(a.id)}:login" title="点击直接改">${a.login ? esc(a.login) : '<span class="miss">未填</span>'}</td>
+      <td class="cell" data-cell="accounts:${esc(a.id)}:binder" title="点击直接改">${a.binder ? esc(a.binder) : '<span class="miss">未填</span>'}</td>
+      <td class="mono tail-cell cell" data-cell="accounts:${esc(a.id)}:tail" data-type="num" data-maxlen="4" title="点击直接改">${a.tail ? esc(a.tail) : '<span class="dim">••••</span>'}</td>
+      <td class="cell" data-cell="accounts:${esc(a.id)}:owner" title="点击直接改">${esc(a.owner || '—')}</td>
+      <td class="cell" data-cell="accounts:${esc(a.id)}:post" title="点击直接改">${esc(a.post || '—')}</td>
       <td>${a.status === '停用' ? chipP('停用', 'p1') : chipOk('启用')}</td>
-      <td>${esc(a.note || '—')}</td>
+      <td class="cell" data-cell="accounts:${esc(a.id)}:note" title="点击直接改">${esc(a.note || '—')}</td>
       <td>${acts('accounts', a.id)}</td>
     </tr>`).join('')
     : `<tr><td colspan="9" class="acct-empty">这家店还没有账号 —— 点右上「新增账号」，按 角色 / 登录账号 / 绑定人 / 尾号 逐项填第一条</td></tr>`;
@@ -95,8 +95,8 @@ function renderStores() {
         ${accts.length ? `<span class="acct-flag">账号 ${accts.length}</span>` : ''}
       </td>
       <td>${chipP(stt.t, stt.c)}</td>
-      <td>${hasOwner(s) ? esc(s.owner) : chipP('待分配', 'p1')}</td>
-      <td>${s.binder ? esc(s.binder) : '<span class="dim">—</span>'}</td>
+      <td class="cell" data-cell="shops:${esc(s.id)}:owner" title="点击直接改">${hasOwner(s) ? esc(s.owner) : '<span class="dim">点此填写</span>'}</td>
+      <td class="cell" data-cell="shops:${esc(s.id)}:binder" title="点击直接改">${s.binder ? esc(s.binder) : '<span class="dim">点此填写</span>'}</td>
       <td class="n mono">${accts.length ? '<b style="font-weight:500">' + accts.length + '</b>' : '<span class="dim">—</span>'}</td>
       <td class="n">${acts('shops', s.id)}</td>
     </tr>`;

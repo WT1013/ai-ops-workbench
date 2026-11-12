@@ -38,7 +38,7 @@ function renderNav() {
     `<div class="nav-grp-t">${esc(g.t)}</div>` +
     g.items.map(p => `<button type="button" data-go="${p.id}">
         <span class="ic">${NAV_ICON[p.id] || ''}</span>
-        <span class="lb">${esc(p.name)}</span>
+        <span class="lb">${esc(typeof TX === 'function' ? TX('nav.' + p.id + '.name') : p.name)}</span>
         <span class="meta" data-meta="${p.id}"></span>
       </button>`).join('')
   ).join('');
@@ -77,7 +77,7 @@ function go(id) {
     if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
   });
   const p = PAGES.find(x => x.id === id);
-  $('#crumb').innerHTML = `工作台 <i>/</i> <b>${p.name}</b>`;
+  $('#crumb').innerHTML = `工作台 <i>/</i> <b>${esc(typeof TX === 'function' ? TX('nav.' + id + '.name') : p.name)}</b>`;
   $('#viewport').scrollTop = 0;
   render();
   moveGlide();

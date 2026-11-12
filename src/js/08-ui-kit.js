@@ -62,3 +62,61 @@ function cfgBar() {
     <span style="margin-left:auto;font-size:10.5px;color:var(--ink3);font-family:var(--mono)" id="cfgSync">${cfgSyncText()}</span>
   </div>`;
 }
+
+/* ---------- 表格单元格内联编辑（点一下就能改，像 Excel） ----------
+   用法：<td class="cell" data-cell="集合:记录id:字段" data-type="num" data-maxlen="4"> */
+function openCellEdit(cell) {
+  if (!canEdit()) { denyWrite(); return; }
+  const parts = String(cell.dataset.cell || '').split(':');
+  if (parts.length < 3) return;
+  const coll = parts[0], id = parts[1], field = parts[2];
+  const rec = store.get(coll, id);
+  if (!rec) { toast('这条记录已被删除，刷新一下', 'bad'); return; }
+
+  const isNum = cell.dataset.type === 'num';
+  const maxlen = +(cell.dataset.maxlen || 0);
+  const oldVal = rec[field] == null ? '' : String(rec[field]);
+
+  const inp = document.createElement('input');
+  inp.className = 'cell-inp';
+  inp.value = oldVal;
+  if (isNum && field !== 'tail') inp.type = 'number';
+  if (maxlen) inp.maxLength = maxlen;
+  cell.classList.add('editing');
+  cell.textContent = '';
+  cell.appendChild(inp);
+  inp.focus();
+  inp.select();
+
+  let done = false;
+  const finish = save => {
+    if (done) return;
+    done = true;
+    let changed = false;
+    if (save) {
+      let v = inp.value.trim();
+      if (maxlen) v = v.replace(/\D/g, '').slice(0, maxlen);
+      let val = v;
+      if (isNum) {
+        if (v === '') val = null;
+        else {
+          val = num(v);
+          if (val == null) { toast('这里只能填数字', 'bad'); }
+        }
+      }
+      if (String(oldVal) !== String(val == null ? '' : val)) {
+        store.update(coll, id, { [field]: val });
+        changed = true;
+      }
+    }
+    cell.classList.remove('editing');
+    render();
+    if (changed) toast('已保存 · 全组可见', 'ok');
+  };
+
+  inp.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter') { ev.preventDefault(); finish(true); }
+    else if (ev.key === 'Escape') { ev.preventDefault(); finish(false); }
+  });
+  inp.addEventListener('blur', () => finish(true));
+}

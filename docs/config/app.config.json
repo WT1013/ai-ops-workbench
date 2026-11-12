@@ -1,0 +1,36 @@
+{
+  "$comment": "项目公共配置 —— 全组共用一份。改这里 = 改所有人的连接方式，无需改代码。",
+  "app": {
+    "name": "AI运营组工作台",
+    "version": "v6.0"
+  },
+  "cloud": {
+    "url": "https://kocuowtqklojxkhzlwpe.supabase.co",
+    "key": "sb_publishable_EinGWbe2S8hHl0kqngnmIg_uyZ5xRnp",
+    "recTable": "ops_records",
+    "kvTable": "ops_kv",
+    "scope": "project"
+  },
+  "data": {
+    "base": "data/",
+    "pollSeconds": 60
+  },
+  "edit": {
+    "codeSha256": "232357b8a85e05f0ff657f3a255089698d44a7d85a51e98234d1ab18972c524c",
+    "hint": "团队编辑码向项目管理员索取；只读预览无需任何码"
+  },
+  "connectors": {
+    "dingtalk": {
+      "pluginId": "dingtalk@workbuddy-connector-plugins-official",
+      "name": "钉钉",
+      "scope": "project",
+      "use": "商品分组绑定、审批、群通知"
+    },
+    "tmeet": {
+      "pluginId": "tmeet@workbuddy-connector-plugins-official",
+      "name": "腾讯会议",
+      "scope": "project",
+      "use": "周会与复盘"
+    }
+  }
+}

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>AI运营组工作台 v5.0</title>
+<title>AI运营组工作台 v6.0</title>
 <link rel="icon" href="data:,">
 <style>
 /* ============ tokens ============ */
@@ -1219,6 +1219,57 @@ html[data-theme="dark"] .boot{
 @keyframes bootspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.boot-spin{animation:none}}
 
+/* ---------- 工作台设置页 ---------- */
+.set-panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+.set-tbl{width:100%;border-collapse:collapse}
+.set-tbl td{padding:6px 8px;border-bottom:1px solid var(--line);font-size:12.5px;vertical-align:middle}
+.set-tbl tr:last-child td{border-bottom:none}
+.set-lb{color:var(--ink2);width:132px;white-space:nowrap}
+.set-def{color:var(--ink3);font-size:11.5px;width:210px}
+.set-inp{width:100%;height:30px;padding:0 9px;border:1px solid var(--line2);border-radius:7px;background:var(--panel2);color:var(--ink);font-size:12.5px;outline:none}
+.set-inp:focus{border-color:var(--amber);background:var(--panel)}
+.set-tip{font-size:11.5px;color:var(--ink3);line-height:1.7;margin-top:8px}
+.set-tip code{font-family:var(--mono);background:var(--panel3);padding:1px 5px;border-radius:4px;color:var(--ink2)}
+.set-code{width:100%;min-height:150px;padding:10px 12px;border:1px solid var(--line2);border-radius:9px;background:var(--panel2);color:var(--ink);font-family:var(--mono);font-size:12px;line-height:1.65;resize:vertical;outline:none;box-sizing:border-box}
+.set-code:focus{border-color:var(--amber);background:var(--panel)}
+.set-acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+
+/* ---------- 表格单元格内联编辑 ---------- */
+td.cell{cursor:text}
+td.cell:hover{background:var(--panel3);box-shadow:inset 0 0 0 1px var(--line2)}
+td.cell.editing{background:var(--panel);box-shadow:inset 0 0 0 1px var(--amber);padding:2px 4px}
+.cell-inp{width:100%;min-width:60px;height:24px;padding:0 4px;border:none;border-radius:3px;background:transparent;color:var(--ink);font-size:inherit;font-family:inherit;outline:none}
+
+/* ---------- 访问模式徽标（只读预览 / 成员编辑） ---------- */
+.mode-pill{
+  height:24px;padding:0 10px;border-radius:12px;cursor:pointer;
+  border:1px solid var(--line2);background:var(--panel);color:var(--ink2);
+  font-size:11px;font-family:inherit;white-space:nowrap;line-height:22px;
+  transition:.12s linear;
+}
+.mode-pill:hover{border-color:var(--amber);color:var(--ink)}
+.mode-pill.on{background:var(--good-soft);border-color:var(--good);color:var(--good)}
+body.ro .mode-pill{background:var(--panel3)}
+
+/* 只读预览：隐藏所有写入口，保留完整浏览体验 */
+body.ro .acts,
+body.ro [data-new],
+body.ro [data-del],
+body.ro [data-edit],
+body.ro [data-done],
+body.ro [data-import],
+body.ro [data-clear-seed],
+body.ro [data-textreset],
+body.ro [data-codesave],
+body.ro [data-codeclear]{display:none !important}
+body.ro td.cell{cursor:default}
+body.ro td.cell:hover{background:transparent;box-shadow:none}
+body.ro .set-inp,
+body.ro .set-code,
+body.ro #cfgBar input,
+body.ro #cfgBar select{pointer-events:none;opacity:.65}
+body.ro .cfgbar-tip{display:none}
+
 </style>
 </head>
 <body>
@@ -1235,7 +1286,7 @@ html[data-theme="dark"] .boot{
             <path d="M1.8 10.6l2.5-3.8 2.4 2.3 2.4-5.2 2.2 3.5 2.9-2.2"/>
           </svg>
         </span>
-        <span class="r-brand-t"><b>AI运营组工作台</b><i>AI OPS WORKBENCH</i></span>
+        <span class="r-brand-t"><b id="brandName">AI运营组工作台</b><i id="brandSub">AI OPS WORKBENCH</i></span>
       </div>
 
       <nav class="nav" id="nav"></nav>
@@ -1257,6 +1308,7 @@ html[data-theme="dark"] .boot{
       </button>
       <div class="crumb" id="crumb"></div>
       <div class="top-right">
+        <button class="mode-pill" id="modePill" type="button" title="访问模式">只读预览</button>
         <div class="stamp">数据截至 <b>09:00</b></div>
         <button class="icon-btn" id="theme" title="切换主题" aria-label="切换主题">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
@@ -1269,7 +1321,7 @@ html[data-theme="dark"] .boot{
     <div class="viewport" id="viewport"></div>
   </div>
 </div>
-<script>window.__OPS_CFG__={"url":"https://kocuowtqklojxkhzlwpe.supabase.co","key":"sb_publishable_EinGWbe2S8hHl0kqngnmIg_uyZ5xRnp","recTable":"ops_records","kvTable":"ops_kv"};</script>
+<script>window.__OPS_CFG__={"url":"https://kocuowtqklojxkhzlwpe.supabase.co","key":"sb_publishable_EinGWbe2S8hHl0kqngnmIg_uyZ5xRnp","recTable":"ops_records","kvTable":"ops_kv","dataBase":"data/","pollSeconds":60,"editSha":"232357b8a85e05f0ff657f3a255089698d44a7d85a51e98234d1ab18972c524c","editHint":"团队编辑码向项目管理员索取；只读预览无需任何码","connectors":{"dingtalk":{"pluginId":"dingtalk@workbuddy-connector-plugins-official","name":"钉钉","scope":"project","use":"商品分组绑定、审批、群通知"},"tmeet":{"pluginId":"tmeet@workbuddy-connector-plugins-official","name":"腾讯会议","scope":"project","use":"周会与复盘"}},"version":"v6.0"};</script>
 <script>
 (function () {
 "use strict";
@@ -1909,6 +1961,8 @@ const store = {
   cfg: { targets: { adopt: 60, gen: 75, conv: 40, resp: 98 }, range: 14 },
   session: null,
   cfgMeta: { at: 0, by: '' },   // 配置最后修改人/时间（团队共享）
+  texts: {},         // 文案覆盖：'nav.board.name' -> '自定义名'
+  code: null,        // 自定义样式/脚本：{ css, js, at, by }
   synced: {},        // key -> 上次同步时的 JSON 快照
   _timer: 0, _flushing: null, _again: false, _cfgTimer: 0,
 
@@ -1924,7 +1978,51 @@ const store = {
   },
   cfgCache() { try { localStorage.setItem(LS_CFG, JSON.stringify(this.cfg)); } catch (e) {} },
 
-  /* 从云端读团队配置；云端还没有就写默认值上去 */
+  /* 团队级文案与自定义代码：和 cfg 一样存云端 kv，谁改所有人可见 */
+  async loadTeam() {
+    if (!cloud) {
+      try {
+        const t = localStorage.getItem('wb.signal.v3.texts');
+        if (t) this.texts = JSON.parse(t) || {};
+        const c = localStorage.getItem('wb.signal.v3.code');
+        if (c) this.code = JSON.parse(c);
+      } catch (e) {}
+      return;
+    }
+    try { this.texts = (await kvGet('texts')) || {}; } catch (e) {}
+    try { this.code = await kvGet('code'); } catch (e) {}
+  },
+  cacheTeam() {
+    try {
+      localStorage.setItem('wb.signal.v3.texts', JSON.stringify(this.texts || {}));
+      localStorage.setItem('wb.signal.v3.code', JSON.stringify(this.code || null));
+    } catch (e) {}
+  },
+  async saveTexts() {
+    this.cacheTeam();
+    if (!cloud) return;
+    await kvSet('texts', this.texts);
+  },
+  async setText(k, v) {
+    if (!canEdit()) { denyWrite(); return; }
+    const val = String(v == null ? '' : v).trim();
+    if (val) this.texts[k] = val; else delete this.texts[k];
+    try { await this.saveTexts(); } catch (e) { toast('文案保存失败：' + ((e && e.message) || e), 'bad'); }
+  },
+  async saveCode(css, js) {
+    if (!canEdit()) { denyWrite(); return; }
+    this.code = { css: css || '', js: js || '', at: Date.now(), by: myName() };
+    this.cacheTeam();
+    if (!cloud) { toast('已存在本机（云端未连接）', 'ok'); return; }
+    await kvSet('code', this.code);
+  },
+  async clearCode() {
+    if (!canEdit()) { denyWrite(); return; }
+    this.code = null;
+    this.cacheTeam();
+    if (cloud) await kvSet('code', { css: '', js: '', at: Date.now(), by: myName() });
+  },
+
   async loadCfg() {
     let c = null, reachable = false;
     try { c = await kvGet('cfg'); reachable = !!cloud; } catch (e) { reachable = false; }
@@ -1939,6 +2037,7 @@ const store = {
   },
   /* 改配置：本地缓存即时生效，400ms 后写云端，全组同步 */
   saveCfg() {
+    if (!canEdit()) { denyWrite(); return; }
     this.cfgCache();
     clearTimeout(this._cfgTimer);
     this._cfgTimer = setTimeout(() => { this.pushCfg(); }, 400);
@@ -2071,27 +2170,37 @@ const store = {
   list(k) { return (this.db[k] || []).slice(); },
   get(k, id) { return (this.db[k] || []).find(x => x.id === id) || null; },
   add(k, obj) {
-    const rec = Object.assign({ id: uid(k[0]) }, obj);
+    if (!canEdit()) { denyWrite(); return null; }
+    const rec = Object.assign({ id: uid(k[0]) }, obj, { __mt: Date.now(), __src: 'ui' });
     this.db[k].unshift(rec); this.save(); return rec;
   },
   update(k, id, patch) {
+    if (!canEdit()) { denyWrite(); return null; }
     const r = this.get(k, id); if (!r) return null;
-    Object.assign(r, patch); this.save(); return r;
+    Object.assign(r, patch, { __mt: Date.now() }); this.save(); return r;
   },
   remove(k, id) {
+    if (!canEdit()) { denyWrite(); return; }
     this.db[k] = this.db[k].filter(x => x.id !== id); this.save();
   },
   upsertMetric(rec) {
+    if (!canEdit()) { denyWrite(); return null; }
     const hit = this.db.metrics.find(m => m.shop === rec.shop && m.date === rec.date);
-    if (hit) { Object.assign(hit, rec); this.save(); return 'update'; }
-    this.db.metrics.push(Object.assign({ id: uid('m') }, rec)); this.save(); return 'insert';
+    if (hit) { Object.assign(hit, rec, { __mt: Date.now() }); this.save(); return 'update'; }
+    this.db.metrics.push(Object.assign({ id: uid('m') }, rec, { __mt: Date.now(), __src: 'ui' })); this.save(); return 'insert';
   },
   clearAll() {
+    if (!canEdit()) { denyWrite(); return; }
     KINDS.forEach(k => { this.db[k] = []; });
     this.db.meta = { seed: false, ver: DB_VER };
     this.save();
   }
 };
+
+/* 只读模式下的统一拦截：任何漏掉的写入口都走这里，不会静默改数据 */
+function denyWrite() {
+  toast('只读预览：当前没有编辑权限。项目成员点右上角模式徽标输码进入编辑。', 'bad');
+}
 
 /* 「我是谁」：记在本机、不进云端；写库时带上改动人，方便追溯是谁改的。
    打开即用，不需要登录，名字只用于标记。 */
@@ -2758,6 +2867,64 @@ function cfgBar() {
   </div>`;
 }
 
+/* ---------- 表格单元格内联编辑（点一下就能改，像 Excel） ----------
+   用法：<td class="cell" data-cell="集合:记录id:字段" data-type="num" data-maxlen="4"> */
+function openCellEdit(cell) {
+  if (!canEdit()) { denyWrite(); return; }
+  const parts = String(cell.dataset.cell || '').split(':');
+  if (parts.length < 3) return;
+  const coll = parts[0], id = parts[1], field = parts[2];
+  const rec = store.get(coll, id);
+  if (!rec) { toast('这条记录已被删除，刷新一下', 'bad'); return; }
+
+  const isNum = cell.dataset.type === 'num';
+  const maxlen = +(cell.dataset.maxlen || 0);
+  const oldVal = rec[field] == null ? '' : String(rec[field]);
+
+  const inp = document.createElement('input');
+  inp.className = 'cell-inp';
+  inp.value = oldVal;
+  if (isNum && field !== 'tail') inp.type = 'number';
+  if (maxlen) inp.maxLength = maxlen;
+  cell.classList.add('editing');
+  cell.textContent = '';
+  cell.appendChild(inp);
+  inp.focus();
+  inp.select();
+
+  let done = false;
+  const finish = save => {
+    if (done) return;
+    done = true;
+    let changed = false;
+    if (save) {
+      let v = inp.value.trim();
+      if (maxlen) v = v.replace(/\D/g, '').slice(0, maxlen);
+      let val = v;
+      if (isNum) {
+        if (v === '') val = null;
+        else {
+          val = num(v);
+          if (val == null) { toast('这里只能填数字', 'bad'); }
+        }
+      }
+      if (String(oldVal) !== String(val == null ? '' : val)) {
+        store.update(coll, id, { [field]: val });
+        changed = true;
+      }
+    }
+    cell.classList.remove('editing');
+    render();
+    if (changed) toast('已保存 · 全组可见', 'ok');
+  };
+
+  inp.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter') { ev.preventDefault(); finish(true); }
+    else if (ev.key === 'Escape') { ev.preventDefault(); finish(false); }
+  });
+  inp.addEventListener('blur', () => finish(true));
+}
+
 /* ---------- 图表 ---------- */
 const C = { w: 760, h: 242, pl: 38, pr: 60, pt: 18, pb: 30 };
 let chartData = [];
@@ -3033,13 +3200,13 @@ const uiState = () => (window.__sb = window.__sb || { open: {}, acctOpen: {} });
 function acctPanel(s, accts) {
   const rows = accts.length ? accts.map(a => `<tr>
       <td>${a.role ? chipP(a.role, a.role === '主账号' ? 'amber' : 'mute') : '<span class="dim">—</span>'}</td>
-      <td class="mono">${a.login ? esc(a.login) : '<span class="miss">未填</span>'}</td>
-      <td>${a.binder ? esc(a.binder) : '<span class="miss">未填</span>'}</td>
-      <td class="mono tail-cell">${a.tail ? esc(a.tail) : '<span class="dim">••••</span>'}</td>
-      <td>${esc(a.owner || '—')}</td>
-      <td>${esc(a.post || '—')}</td>
+      <td class="mono cell" data-cell="accounts:${esc(a.id)}:login" title="点击直接改">${a.login ? esc(a.login) : '<span class="miss">未填</span>'}</td>
+      <td class="cell" data-cell="accounts:${esc(a.id)}:binder" title="点击直接改">${a.binder ? esc(a.binder) : '<span class="miss">未填</span>'}</td>
+      <td class="mono tail-cell cell" data-cell="accounts:${esc(a.id)}:tail" data-type="num" data-maxlen="4" title="点击直接改">${a.tail ? esc(a.tail) : '<span class="dim">••••</span>'}</td>
+      <td class="cell" data-cell="accounts:${esc(a.id)}:owner" title="点击直接改">${esc(a.owner || '—')}</td>
+      <td class="cell" data-cell="accounts:${esc(a.id)}:post" title="点击直接改">${esc(a.post || '—')}</td>
       <td>${a.status === '停用' ? chipP('停用', 'p1') : chipOk('启用')}</td>
-      <td>${esc(a.note || '—')}</td>
+      <td class="cell" data-cell="accounts:${esc(a.id)}:note" title="点击直接改">${esc(a.note || '—')}</td>
       <td>${acts('accounts', a.id)}</td>
     </tr>`).join('')
     : `<tr><td colspan="9" class="acct-empty">这家店还没有账号 —— 点右上「新增账号」，按 角色 / 登录账号 / 绑定人 / 尾号 逐项填第一条</td></tr>`;
@@ -3123,8 +3290,8 @@ function renderStores() {
         ${accts.length ? `<span class="acct-flag">账号 ${accts.length}</span>` : ''}
       </td>
       <td>${chipP(stt.t, stt.c)}</td>
-      <td>${hasOwner(s) ? esc(s.owner) : chipP('待分配', 'p1')}</td>
-      <td>${s.binder ? esc(s.binder) : '<span class="dim">—</span>'}</td>
+      <td class="cell" data-cell="shops:${esc(s.id)}:owner" title="点击直接改">${hasOwner(s) ? esc(s.owner) : '<span class="dim">点此填写</span>'}</td>
+      <td class="cell" data-cell="shops:${esc(s.id)}:binder" title="点击直接改">${s.binder ? esc(s.binder) : '<span class="dim">点此填写</span>'}</td>
       <td class="n mono">${accts.length ? '<b style="font-weight:500">' + accts.length + '</b>' : '<span class="dim">—</span>'}</td>
       <td class="n">${acts('shops', s.id)}</td>
     </tr>`;
@@ -3491,9 +3658,10 @@ const PAGES = [
   { id: 'tasks', ix: '05', name: '协同与任务', short: '任务', grp: '要办事' },
   { id: 'assets', ix: '04', name: '资产库', short: '资产', grp: '要办事' },
   { id: 'qc', ix: '06', name: '质检风控设置', short: '风控', grp: '配置区' },
-  { id: 'api', ix: '07', name: 'AI 接口', short: '接口', grp: '配置区' }
+  { id: 'api', ix: '07', name: 'AI 接口', short: '接口', grp: '配置区' },
+  { id: 'settings', ix: '08', name: '工作台设置', short: '设置', grp: '配置区' }
 ];
-const RENDER = { signal: renderSignal, board: renderBoard, stores: renderStores, assets: renderAssets, tasks: renderTasks, qc: renderQc, api: renderApi };
+const RENDER = { signal: renderSignal, board: renderBoard, stores: renderStores, assets: renderAssets, tasks: renderTasks, qc: renderQc, api: renderApi, settings: renderSettings };
 
 /* ---------- 侧栏图标：统一 15×15 线性 / stroke 1.7 / round ---------- */
 const NAV_ICON = {
@@ -3535,7 +3703,7 @@ function renderNav() {
     `<div class="nav-grp-t">${esc(g.t)}</div>` +
     g.items.map(p => `<button type="button" data-go="${p.id}">
         <span class="ic">${NAV_ICON[p.id] || ''}</span>
-        <span class="lb">${esc(p.name)}</span>
+        <span class="lb">${esc(typeof TX === 'function' ? TX('nav.' + p.id + '.name') : p.name)}</span>
         <span class="meta" data-meta="${p.id}"></span>
       </button>`).join('')
   ).join('');
@@ -3574,7 +3742,7 @@ function go(id) {
     if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
   });
   const p = PAGES.find(x => x.id === id);
-  $('#crumb').innerHTML = `工作台 <i>/</i> <b>${p.name}</b>`;
+  $('#crumb').innerHTML = `工作台 <i>/</i> <b>${esc(typeof TX === 'function' ? TX('nav.' + id + '.name') : p.name)}</b>`;
   $('#viewport').scrollTop = 0;
   render();
   moveGlide();
@@ -3753,10 +3921,76 @@ document.addEventListener('click', e => {
     renderDrill();
     return;
   }
+
+  /* 设置页：恢复默认文案 */
+  const treset = e.target.closest('[data-textreset]');
+  if (treset) {
+    store.texts = {};
+    store.saveTexts().then(() => { applyTexts(); render(); toast('已恢复默认文案', 'ok'); })
+      .catch(err => toast('恢复失败：' + ((err && err.message) || err), 'bad'));
+    return;
+  }
+
+  /* 设置页：保存自定义 CSS / JS */
+  const csave = e.target.closest('[data-codesave]');
+  if (csave) {
+    const css = (($('#setCss') || {}).value) || '';
+    const js = (($('#setJs') || {}).value) || '';
+    if (csave.dataset.codesave === 'js') {
+      const bad = checkJs(js);
+      if (bad) { toast('脚本有语法错误，未保存：' + bad, 'bad'); return; }
+    }
+    store.saveCode(css, js)
+      .then(() => { applyUserCode(); toast('已保存并生效 · 所有人刷新后同样生效', 'ok'); })
+      .catch(err => toast('保存失败：' + ((err && err.message) || err), 'bad'));
+    return;
+  }
+
+  const cclear = e.target.closest('[data-codeclear]');
+  if (cclear) {
+    confirmDialog('清空自定义代码', '将删除自定义的 CSS 与 JS，外观回到默认。这个操作全组都受影响。', () => {
+      store.clearCode().then(() => {
+        const s = document.getElementById('userCss');
+        if (s) s.remove();
+        render();
+        toast('已清空自定义代码', 'ok');
+      });
+    }, '确认清空');
+    return;
+  }
+
+  /* 设置页：立即检查数据源（只读模式下也允许，纯读取） */
+  const dr = e.target.closest('[data-datarefresh]');
+  if (dr) {
+    refreshDataCsv(false).then(changed => {
+      renderDataStatus();
+      if (!changed) toast(dataCache ? '已是最新（' + dataCache.version + '）' : '数据源未连上：' + dataErr, changed ? 'ok' : 'bad');
+    });
+    return;
+  }
+
+  /* 表格单元格内联编辑：点一下变输入框 */
+  const cell = e.target.closest('[data-cell]');
+  if (cell && !cell.querySelector('input')) { openCellEdit(cell); return; }
 });
 
 document.addEventListener('change', e => {
   if (e.target.id === 'drillSel') { window.__drillShop = e.target.value; renderDrill(); return; }
+
+  /* 只读模式下即使改了控件也不落库，直接把界面恢复成库里的值 */
+  if (!canEdit() && e.target.closest('[data-tgt],[data-range],[data-text]')) {
+    denyWrite(); render(); return;
+  }
+
+  /* 设置页：文案改动 → 存云端 → 立即刷新界面上对应文字 */
+  const tx = e.target.closest('[data-text]');
+  if (tx) {
+    store.setText(tx.dataset.text, tx.value)
+      .then(() => { applyTexts(); toast('已保存 · 全组刷新后同样生效', 'ok'); })
+      .catch(err => toast('保存失败：' + ((err && err.message) || err), 'bad'));
+    return;
+  }
+
   const t = e.target.closest('[data-tgt]');
   if (t) {
     const v = num(t.value);
@@ -3865,7 +4099,13 @@ async function pullLatest(silent) {
   const ae = document.activeElement;
   if (ae && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)) return false;
   const snap = JSON.stringify(store.db) + '|' + JSON.stringify(store.cfg);
+  const oldCode = JSON.stringify(store.code);
   try { await store.hydrate({ noSeed: true }); } catch (e) { return false; }
+  await store.loadTeam();
+  /* 云端拿到的是「界面改过的」部分，再把 CSV 数据源合回来（CSV 只覆盖更旧的记录） */
+  if (typeof mergeCsvData === 'function') mergeCsvData();
+  applyTexts();
+  if (JSON.stringify(store.code) !== oldCode) applyUserCode();
   if (snap === JSON.stringify(store.db) + '|' + JSON.stringify(store.cfg)) return false;
   if (!store.cloudErr) hideCloudNotice();
   render();
@@ -3932,9 +4172,15 @@ async function enterApp() {
   let r = null;
   try { r = await store.hydrate(); }
   catch (e) { r = null; store.cloudErr = (e && e.message) || String(e); }
+  await store.loadTeam();
+  /* 数据源：先把 CSV 合进来再画第一帧，避免先闪一下旧数据 */
+  try { await loadDataCsv(true); mergeCsvData(); } catch (e) {}
   hideLoading();
   setUserCard();
   startApp();
+  applyTexts();
+  applyUserCode();
+  applyMode();
   syncNotice();
   if (r && r.seeded) toast('已初始化团队数据 · ' + r.rows + ' 条记录', 'ok');
 }
@@ -3977,13 +4223,508 @@ function startApp() {
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => moveGlide());
 }
 
+/* ---------- 页面：工作台设置（改文案 / 在线改代码） ---------- */
+
+/* 可改的文案项：默认值写在代码里，store.texts 只存被改过的那些 */
+const TEXTS_DEF = {
+  'brand.name': 'AI运营组工作台',
+  'brand.sub': 'AI OPS WORKBENCH'
+};
+const TEXT_LABELS = { 'brand.name': '工作台名称', 'brand.sub': '英文副标题' };
+PAGES.forEach(p => {
+  TEXTS_DEF['nav.' + p.id + '.name'] = p.name;
+  TEXT_LABELS['nav.' + p.id + '.name'] = '菜单 · ' + p.short;
+});
+
+function TX(k) {
+  const v = store.texts && store.texts[k];
+  if (v != null && v !== '') return v;
+  return TEXTS_DEF[k] != null ? TEXTS_DEF[k] : '';
+}
+
+/* 只改受影响的那几个 DOM，不整页重渲染，避免输入框失焦 */
+function applyTexts() {
+  const bn = $('#brandName'), bs = $('#brandSub');
+  if (bn) bn.textContent = TX('brand.name');
+  if (bs) bs.textContent = TX('brand.sub');
+  document.title = TX('brand.name');
+  PAGES.forEach(p => {
+    const lb = document.querySelector('#nav [data-go="' + p.id + '"] .lb');
+    if (lb) lb.textContent = TX('nav.' + p.id + '.name');
+  });
+  const cur = $('#crumb b');
+  if (cur && window.__page) cur.textContent = TX('nav.' + window.__page + '.name');
+  if (typeof moveGlide === 'function') moveGlide();
+}
+
+/* ---- 自定义样式 / 脚本 ---- */
+function checkJs(code) {
+  try { new Function(code); return null; }
+  catch (e) { return e.message; }
+}
+
+function applyUserCode() {
+  const old = document.getElementById('userCss');
+  if (old) old.remove();
+  const c = store.code || {};
+  if (c.css) {
+    const s = document.createElement('style');
+    s.id = 'userCss';
+    s.textContent = c.css;
+    document.head.appendChild(s);
+  }
+  if (c.js) {
+    const bad = checkJs(c.js);
+    if (bad) { toast('自定义脚本有语法错误，已跳过：' + bad, 'bad'); return; }
+    try { new Function(c.js)(); }
+    catch (e) { toast('自定义脚本运行出错：' + ((e && e.message) || e), 'bad'); }
+  }
+}
+
+function renderSettings() {
+  const c = store.code || {};
+  const keys = Object.keys(TEXTS_DEF);
+  const current = keys.filter(k => store.texts && store.texts[k]).length;
+
+  const rows = keys.map(k => {
+    const v = (store.texts && store.texts[k]) || '';
+    return `<tr>
+      <td class="set-lb">${esc(TEXT_LABELS[k] || k)}</td>
+      <td><input class="set-inp" data-text="${esc(k)}" value="${esc(v)}" placeholder="${esc(TEXTS_DEF[k])}" /></td>
+      <td class="set-def">默认：${esc(TEXTS_DEF[k])}</td>
+    </tr>`;
+  }).join('');
+
+  const html = `
+  <div class="sec-head">
+    <h2>工作台设置</h2>
+    <span class="sub">改了之后所有人刷新都能看到 · 改坏了随时恢复默认</span>
+    <div class="head-actions" style="margin-left:auto">
+      <button class="btn" data-textreset>恢复默认文案</button>
+    </div>
+  </div>
+
+  <div class="block-title" style="margin-top:20px">名称与菜单</div>
+  <div class="set-panel">
+    <table class="set-tbl"><tbody>${rows}</tbody></table>
+    <div class="set-tip">留空 = 用默认值。当前有 ${current} 项被改过，改完点输入框外面就自动保存。</div>
+  </div>
+
+  <div class="block-title" style="margin-top:26px">自定义样式（CSS）</div>
+  <div class="set-panel">
+    <textarea id="setCss" class="set-code" spellcheck="false" placeholder="/* 直接写 CSS，保存后立刻生效，例如： */&#10;.r-brand b{letter-spacing:.6px}&#10;.mini-kpis .v{font-size:26px}">${esc(c.css || '')}</textarea>
+    <div class="set-tip">作用于整个工作台，优先级最高。清空后点保存 = 取消自定义样式。</div>
+    <div class="set-acts">
+      <button class="btn primary" data-codesave="css">保存样式并生效</button>
+    </div>
+  </div>
+
+  <div class="block-title" style="margin-top:26px">自定义脚本（JS）</div>
+  <div class="set-panel">
+    <textarea id="setJs" class="set-code" spellcheck="false" placeholder="// 页面加载完执行一次，可用 window.__OPS__ 访问数据，例如：&#10;// __OPS__.toast('今天共 ' + __OPS__.store.list('shops').length + ' 家店')">${esc(c.js || '')}</textarea>
+    <div class="set-tip">保存前会做语法检查；运行出错不会白屏，只会提示并跳过。能访问 <code>__OPS__.store / render / go / toast</code>。</div>
+    <div class="set-acts">
+      <button class="btn primary" data-codesave="js">保存脚本并生效</button>
+      <button class="btn" data-codeclear>清空全部自定义代码</button>
+    </div>
+  </div>
+
+  <div class="block-title" style="margin-top:26px">数据源（团队 CSV）</div>
+  <div class="set-panel">
+    <div id="dataStatus"></div>
+    <div class="set-tip">CSV 放在仓库 <code>data/</code> 目录。成员改完提交，1–2 分钟发布后，所有人的页面会在 60 秒内自动刷新。<br>
+      合并规则：同一行「谁更晚谁生效」——界面改动时间晚于 CSV 发布时间就保留界面版本，否则用 CSV 覆盖；界面上新建的行不会被 CSV 删除。</div>
+    <div class="set-acts">
+      <button class="btn" data-datarefresh>立即检查数据源</button>
+    </div>
+  </div>
+
+  <div class="block-title" style="margin-top:26px">访问与权限</div>
+  <div class="set-panel">
+    <table class="set-tbl"><tbody>
+      <tr><td class="set-lb">当前模式</td><td><b id="modeNow">—</b></td><td class="set-def">右上角徽标可切换</td></tr>
+      <tr><td class="set-lb">外部访问</td><td>只读预览</td><td class="set-def">链接发给谁，谁都能看，但改不了</td></tr>
+      <tr><td class="set-lb">项目成员</td><td>输入团队编辑码后可编辑</td><td class="set-def">数据 / 页面 / 文案 / 代码</td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="set-tip" style="margin-top:22px">
+    自定义代码存在云端，全组共用一份；谁改的会记在 <b>${esc((c.by || '—'))}</b>${c.at ? ' · ' + esc(agoText(c.at)) : ''}。
+  </div>`;
+  setTimeout(() => {
+    renderDataStatus();
+    const m = document.getElementById('modeNow');
+    if (m) m.textContent = canEdit() ? '成员编辑' : '只读预览';
+  }, 0);
+  return html;
+}
+
+/* =========================================================
+   数据源同步：data/*.csv → 页面
+   - CSV 是团队共享的数据源，随仓库一起发布
+   - 启动时读一次，之后每 60 秒查一次 manifest.json（只有几百字节）
+   - manifest 里的版本变了 = 有人改了 CSV → 自动重新拉取并刷新页面
+   - 合并规则「谁更晚谁生效」：界面改动带 __mt 时间戳，
+     比 CSV 发布时间新就保留界面版本，否则用 CSV 覆盖
+   ========================================================= */
+
+const DATA_KINDS = ['shops', 'accounts', 'metrics', 'alerts', 'tasks', 'qc', 'assets', 'apis'];
+const DATA_NUM_FIELDS = {
+  shops: ['order'],
+  metrics: ['adopt', 'gen', 'conv', 'risk', 'agent', 'resp'],
+  qc: ['hits'],
+  apis: ['calls', 'errors']
+};
+const LS_DATA_VER = 'wb.signal.v3.dataver';
+
+let dataCache = null;   // { version, publishedAt, counts, byKind }
+let dataCheckedAt = 0;  // 上次检查时间
+let dataErr = '';
+
+function dataBase() {
+  const c = window.__OPS_CFG__ || {};
+  return String(c.dataBase || 'data/').replace(/\/+$/, '') + '/';
+}
+function dataPollMs() {
+  const c = window.__OPS_CFG__ || {};
+  const s = +c.pollSeconds || 60;
+  return Math.max(15, s) * 1000;
+}
+
+/* RFC4180 够用的 CSV 解析：支持引号包裹、字段内逗号、双引号转义、CRLF */
+function csvParse(text) {
+  let t = String(text || '');
+  if (t.charCodeAt(0) === 0xFEFF) t = t.slice(1);
+  const rows = [];
+  let field = '', row = [], q = false, i = 0;
+  while (i < t.length) {
+    const c = t[i];
+    if (q) {
+      if (c === '"') {
+        if (t[i + 1] === '"') { field += '"'; i += 2; continue; }
+        q = false; i++; continue;
+      }
+      field += c; i++; continue;
+    }
+    if (c === '"') { q = true; i++; continue; }
+    if (c === ',') { row.push(field); field = ''; i++; continue; }
+    if (c === '\r') { i++; continue; }
+    if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; i++; continue; }
+    field += c; i++;
+  }
+  if (field !== '' || row.length) { row.push(field); rows.push(row); }
+  if (!rows.length) return [];
+  const head = rows.shift().map(h => h.trim());
+  return rows
+    .filter(r => r.some(x => String(x).trim() !== ''))
+    .map(r => {
+      const o = {};
+      head.forEach((h, ix) => { o[h] = r[ix] == null ? '' : r[ix]; });
+      return o;
+    });
+}
+
+/* CSV 里全是字符串，按字段类型还原成数字，避免聚合时变成字符串拼接 */
+function typed(kind, obj) {
+  const nums = DATA_NUM_FIELDS[kind] || [];
+  nums.forEach(f => {
+    if (obj[f] === '' || obj[f] == null) { obj[f] = null; return; }
+    const n = parseFloat(obj[f]);
+    obj[f] = isNaN(n) ? null : n;
+  });
+  return obj;
+}
+
+async function fetchText(url) {
+  const r = await fetch(url, { cache: 'no-store' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.text();
+}
+
+/* 读 manifest，版本变了就把所有 CSV 拉下来。
+   返回 true 表示数据有更新。 */
+async function loadDataCsv(force) {
+  const base = dataBase();
+  try {
+    const mf = JSON.parse(await fetchText(base + 'manifest.json?t=' + Date.now()));
+    if (!mf || !mf.version) throw new Error('manifest 格式不对');
+    if (!force && dataCache && dataCache.version === mf.version) {
+      dataCheckedAt = Date.now();
+      dataErr = '';
+      return false;
+    }
+    const byKind = {};
+    const files = Array.isArray(mf.files) ? mf.files : [];
+    for (let i = 0; i < DATA_KINDS.length; i++) {
+      const kind = DATA_KINDS[i];
+      if (files.length && files.indexOf(kind + '.csv') < 0) continue;
+      try {
+        const txt = await fetchText(base + kind + '.csv?t=' + Date.now());
+        byKind[kind] = csvParse(txt).map(r => typed(kind, r));
+      } catch (e) { /* 单个文件坏了不影响其它集合 */ }
+    }
+    const changed = !dataCache || dataCache.version !== mf.version;
+    dataCache = {
+      version: mf.version,
+      publishedAt: Date.parse(mf.publishedAt) || 0,
+      counts: mf.counts || {},
+      byKind: byKind
+    };
+    dataCheckedAt = Date.now();
+    dataErr = '';
+    try { localStorage.setItem(LS_DATA_VER, mf.version); } catch (e) {}
+    return changed;
+  } catch (e) {
+    dataErr = (e && e.message) || String(e);
+    dataCheckedAt = Date.now();
+    return false;
+  }
+}
+
+/* 把 CSV 合并进内存库。规则：
+   1) 同一 id：界面改动时间 __mt 晚于 CSV 发布时间 → 保留界面版本，否则 CSV 覆盖
+   2) CSV 里没有的 id：只有「上次确实来自 CSV」的行才会被删除；
+      界面上新建/历史遗留的行一律保留，绝不因为一次同步丢数据
+   返回被改动的行数 */
+function mergeCsvData() {
+  if (!dataCache || !dataCache.byKind) return 0;
+  const mfAt = dataCache.publishedAt;
+  let touched = 0;
+
+  DATA_KINDS.forEach(kind => {
+    const rows = dataCache.byKind[kind];
+    if (!rows || !rows.length) return;
+    if (!Array.isArray(store.db[kind])) store.db[kind] = [];
+
+    const list = store.db[kind];
+    const byId = {};
+    list.forEach(r => { if (r && r.id) byId[r.id] = r; });
+
+    rows.forEach(src => {
+      if (!src || !src.id) return;
+      const cur = byId[src.id];
+      if (cur && +cur.__mt && +cur.__mt > mfAt) return;  // 界面上的更新更晚，别覆盖
+      if (cur) {
+        const before = JSON.stringify(cur);
+        Object.keys(src).forEach(k => { cur[k] = src[k]; });
+        cur.__src = 'csv';
+        if (JSON.stringify(cur) !== before) touched++;
+      } else {
+        const rec = Object.assign({ id: src.id }, src, { __src: 'csv' });
+        list.push(rec);
+        byId[rec.id] = rec;
+        touched++;
+      }
+    });
+
+    const csvIds = {};
+    rows.forEach(r => { if (r && r.id) csvIds[r.id] = 1; });
+    const kept = list.filter(r => {
+      if (!r || !r.id) return false;
+      if (csvIds[r.id]) return true;
+      if (r.__src !== 'csv') return true;             // 界面新增或历史数据，保留
+      if (+r.__mt && +r.__mt > mfAt) return true;     // 界面上刚改过，保留
+      return false;                                   // CSV 里删掉了 → 一起删
+    });
+    if (kept.length !== list.length) {
+      touched += list.length - kept.length;
+      store.db[kind] = kept;
+    }
+  });
+  return touched;
+}
+
+/* 检查一次：有更新就合并 + 重渲染。
+   silent=true 用于轮询，不给弹窗、不在用户打字时打断。 */
+async function refreshDataCsv(silent) {
+  const changed = await loadDataCsv(false);
+  if (!changed) { renderDataStatus(); return false; }
+  const ae = document.activeElement;
+  const typing = ae && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName);
+  if (typing && silent) return false;                 // 等用户打完字下一轮再说
+  const n = mergeCsvData();
+  render();
+  renderDataStatus();
+  if (!silent && n) toast('数据源已更新 · ' + n + ' 行 · 版本 ' + dataCache.version, 'ok');
+  return true;
+}
+
+function dataStatusText() {
+  if (!dataCache) {
+    if (dataErr) return '数据源未连上（' + dataErr + '）';
+    return '数据源未加载';
+  }
+  return '数据源 ' + dataCache.version + ' · ' + agoText(Date.parse(dataCache.publishedAt) || 0) + '发布';
+}
+
+/* 设置页里的数据源面板（只读信息 + 手动刷新） */
+function renderDataStatus() {
+  const el = document.getElementById('dataStatus');
+  if (el) {
+    const mf = dataCache;
+    const rows = mf ? DATA_KINDS.map(k => `<tr><td>data/${k}.csv</td><td class="mono">${(mf.byKind[k] || []).length} 行</td></tr>`).join('') : '';
+    el.innerHTML = !mf
+      ? `<div class="set-tip">还没读到数据源${dataErr ? '：' + esc(dataErr) : ''}。确认 <code>data/</code> 已随站点发布。</div>`
+      : `<table class="set-tbl"><tbody>
+          <tr><td class="set-lb">当前版本</td><td class="mono">${esc(mf.version)}</td><td class="set-def">${esc(mf.publishedAt ? new Date(mf.publishedAt).toLocaleString('zh-CN') : '—')}</td></tr>
+          <tr><td class="set-lb">检查时间</td><td class="mono">${esc(dataCheckedAt ? new Date(dataCheckedAt).toLocaleTimeString('zh-CN') : '—')}</td><td class="set-def">每 ${Math.round(dataPollMs() / 1000)} 秒自动检查一次</td></tr>
+          ${rows}
+        </tbody></table>`;
+  }
+  const pill = document.getElementById('dataPill');
+  if (pill) {
+    pill.textContent = dataCache ? '数据源 ' + dataCache.version : '数据源未连';
+    pill.title = dataStatusText();
+  }
+}
+function startDataSync() {
+  renderDataStatus();
+  setInterval(() => { if (!document.hidden) refreshDataCsv(true); }, dataPollMs());
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) refreshDataCsv(true);
+  });
+}
+
+/* =========================================================
+   访问模式：只读预览 / 成员编辑
+   - 任何人拿到链接，默认【只读预览】：能看所有页面与数据，不能改
+   - 项目成员输入团队编辑码后进入编辑模式，改动写进团队云端
+   - 编辑状态只记在本机浏览器，换人换设备要重新输码
+   - 说明：这是前端软闸（挡的是链接外传后随手乱改的人）。
+     要做「后端强制隔离」，需要开 Supabase Auth 并按用户写 RLS，
+     步骤见 MIGRATION.md 第 4 节「硬隔离（可选）」。
+   ========================================================= */
+
+const LS_EDIT = 'wb.signal.v3.edit';
+const MODE = { unlocked: false, verified: false };
+
+function editSha() {
+  const c = window.__OPS_CFG__ || {};
+  return String(c.editSha || '').toLowerCase();
+}
+function editHint() {
+  const c = window.__OPS_CFG__ || {};
+  return String(c.editHint || '团队编辑码向项目管理员索取');
+}
+function canEdit() { return !!MODE.unlocked; }
+
+function readEditFlag() {
+  try { return localStorage.getItem(LS_EDIT) === '1'; } catch (e) { return false; }
+}
+function writeEditFlag(on) {
+  try {
+    if (on) localStorage.setItem(LS_EDIT, '1'); else localStorage.removeItem(LS_EDIT);
+  } catch (e) {}
+}
+
+async function sha256Hex(s) {
+  if (!(window.crypto && window.crypto.subtle)) {
+    throw new Error('当前页面不是 https / localhost，浏览器不允许校验编辑码');
+  }
+  const buf = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function normCode(s) { return String(s == null ? '' : s).trim().toLowerCase(); }
+
+/* 把「只读」这件事落到界面上：隐藏写入口、改光标、禁用设置页输入 */
+function applyMode() {
+  const ro = !canEdit();
+  document.body.classList.toggle('ro', ro);
+  const pill = document.getElementById('modePill');
+  if (pill) {
+    pill.textContent = ro ? '只读预览' : '成员编辑';
+    pill.classList.toggle('on', !ro);
+    pill.title = ro
+      ? '当前是只读预览：可以看全部数据，不能修改。项目成员点这里输入编辑码。'
+      : '当前是成员编辑模式：你的改动会写入团队云端。点这里退回只读。';
+  }
+  const tip = document.getElementById('roTip');
+  if (tip) tip.style.display = ro ? '' : 'none';
+}
+
+function setEditMode(on, quiet) {
+  MODE.unlocked = !!on;
+  writeEditFlag(!!on);
+  applyMode();
+  if (!quiet) toast(on ? '已进入成员编辑模式' : '已切回只读预览', on ? 'ok' : '');
+  render();
+}
+
+/* 输码解锁 */
+function askEditCode() {
+  const hint = editHint();
+  openModal({
+    title: '进入成员编辑模式',
+    body: `<div style="font-size:12.5px;line-height:1.85;color:var(--ink2);margin-bottom:10px">
+        这是团队内部工作台，外部链接默认<b>只读预览</b>。<br>输入团队编辑码后，你就能改数据、改页面、改设置，改动会写进团队云端，所有人都看得到。
+      </div>
+      <input id="ecInp" type="password" autocomplete="off" placeholder="团队编辑码"
+        style="width:100%;height:34px;padding:0 10px;border:1px solid var(--line2);border-radius:8px;background:var(--card);color:var(--ink);font-size:13px;outline:none;font-family:var(--mono)" />
+      <div style="font-size:11.5px;color:var(--ink3);margin-top:9px;line-height:1.7">${esc(hint)}</div>`,
+    buttons: [
+      { label: '只读就行', cls: 'ghost' },
+      { label: '解锁', cls: 'primary', fn: c => {
+        const v = ($('#ecInp') || {}).value;
+        tryUnlock(v).then(ok => {
+          if (ok) { c(); setEditMode(true); }
+        });
+      } }
+    ]
+  });
+  setTimeout(() => { const i = $('#ecInp'); if (i) i.focus(); }, 160);
+}
+
+async function tryUnlock(code) {
+  const v = normCode(code);
+  if (!v) { toast('请先输入编辑码', 'bad'); return false; }
+  let h = '';
+  try { h = await sha256Hex(v); }
+  catch (e) { toast(e.message, 'bad'); return false; }
+  if (h !== editSha()) {
+    toast('编辑码不对，或你只有查看权限', 'bad');
+    return false;
+  }
+  return true;
+}
+
+/* 首次进来：恢复本机记住的编辑状态（只认本机开关，不认链接参数）
+   支持 ?edit=1 只是给管理员收藏用的快捷入口，仍需输码 */
+function initMode() {
+  MODE.unlocked = readEditFlag();
+  applyMode();
+  if (window.__modeInit) return;
+  window.__modeInit = 1;
+  const pill = document.getElementById('modePill');
+  if (pill) {
+    pill.addEventListener('click', () => {
+      if (canEdit()) {
+        confirmDialog('退回只读预览', '退出编辑模式后，这个人在这台设备上就只能看、不能改。随时可以再输码进来。', () => setEditMode(false), '退回只读');
+      } else {
+        askEditCode();
+      }
+    });
+  }
+}
+
 /* ---------- init ---------- */
 store.initCfg();
+initMode();
 (async function boot() {
   await auth.restore();
-  enterApp();
+  await enterApp();
+  initMode();
+  startDataSync();
 })();
 
+/* 对外的运行时接口：设置页里的「自定义脚本」通过 window.__OPS__ 访问这些 */
+window.__OPS__ = {
+  store: store, render: render, go: go, toast: toast, cloud: cloud,
+  KINDS: KINDS, PAGES: PAGES,
+  TX: TX, applyTexts: applyTexts, applyUserCode: applyUserCode,
+  canEdit: canEdit, setEditMode: setEditMode, dataCache: () => dataCache,
+  refreshDataCsv: refreshDataCsv, dataStatusText: dataStatusText,
+  $: $, $$: $$, esc: esc, uid: uid, num: num, openForm: openForm, openModal: openModal
+};
 })();
 
 </script>

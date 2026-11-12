@@ -10,10 +10,17 @@
 const fs = require('fs');
 const path = require('path');
 
+const fsx = fs;
+const crypto = require('crypto');
+
 const ROOT = path.resolve(__dirname, '..');
 const read = p => fs.readFileSync(path.join(ROOT, p), 'utf8');
-const VERSION = 'v5.0';
-const APP_NAME = 'AI运营组工作台';
+
+/* 项目公共配置：云端连接、数据源、编辑码、公共连接器全在这一个文件里。
+   换后端 / 换连接器 / 换编辑码都不用改代码，只改 config/app.config.json。 */
+const PROJECT_CFG = JSON.parse(read('config/app.config.json'));
+const VERSION = PROJECT_CFG.app.version;
+const APP_NAME = PROJECT_CFG.app.name;
 
 /* 拼接顺序 = 依赖顺序，不要随意调换 */
 const JS_PARTS = [
@@ -40,6 +47,9 @@ const JS_PARTS = [
   '20-events.js',        // 全局事件绑定
   '21-theme.js',         // 主题
   '22-auth.js',          // 登录门禁、启动流程、自动同步
+  '23-page-settings.js', // 页面：工作台设置（改文案 / 在线改代码）
+  '24-data-sync.js',     // 数据源：CSV 拉取、轮询、时间戳合并
+  '25-mode.js',          // 访问模式：只读预览 / 成员编辑码解锁
   '29-init.js',          // 入口调用
   '99-close.js'          // IIFE 收尾
 ];
@@ -71,10 +81,16 @@ const js = JS_PARTS.map(f => read('src/js/' + f)).join('\n');
    publishable key 只用于标识项目，数据权限由 Supabase 的 RLS 策略控制；
    表结构见 supabase/schema.sql。 */
 const OPS_CFG = {
-  url: 'https://kocuowtqklojxkhzlwpe.supabase.co',
-  key: 'sb_publishable_EinGWbe2S8hHl0kqngnmIg_uyZ5xRnp',
-  recTable: 'ops_records',
-  kvTable: 'ops_kv'
+  url: PROJECT_CFG.cloud.url,
+  key: PROJECT_CFG.cloud.key,
+  recTable: PROJECT_CFG.cloud.recTable,
+  kvTable: PROJECT_CFG.cloud.kvTable,
+  dataBase: PROJECT_CFG.data.base,
+  pollSeconds: PROJECT_CFG.data.pollSeconds,
+  editSha: PROJECT_CFG.edit.codeSha256,
+  editHint: PROJECT_CFG.edit.hint,
+  connectors: PROJECT_CFG.connectors,
+  version: VERSION
 };
 
 /* --stub：清空密钥 → 走本机模式，供离线回归测试用 */
@@ -118,12 +134,49 @@ h = h.replace('</body>', '<div id="modal-root"></div>\n<div id="toast-root"></di
   if (h.indexOf(k) >= 0) throw new Error('产物里仍有旧登录门禁代码：' + k);
 });
 
-// 7) 输出
+/* 7) 数据源：data/*.csv → 发布目录，并生成清单（含内容哈希与发布时间）
+      页面靠这份清单判断「CSV 有没有被谁改过」，改了就在 60 秒内自动刷新。 */
+function buildDataManifest() {
+  const dir = path.join(ROOT, 'data');
+  if (!fs.existsSync(dir)) throw new Error('缺少 data/ 目录：先跑 node scripts/export-data.cjs');
+  const files = fs.readdirSync(dir).filter(f => /\.csv$/i.test(f)).sort();
+  if (!files.length) throw new Error('data/ 里没有 CSV');
+  const hash = crypto.createHash('sha256');
+  const counts = {};
+  files.forEach(f => {
+    const buf = fs.readFileSync(path.join(dir, f));
+    hash.update(f + ':').update(buf);
+    const text = buf.toString('utf8').replace(/^\uFEFF/, '');
+    counts[f.replace(/\.csv$/i, '')] = Math.max(0, text.split('\n').filter(l => l.trim()).length - 1);
+  });
+  const version = hash.digest('hex').slice(0, 12);
+  const mfPath = path.join(dir, 'manifest.json');
+  let old = null;
+  try { old = JSON.parse(fs.readFileSync(mfPath, 'utf8')); } catch (e) {}
+  /* 内容没变就沿用上次的发布时间，否则每次构建都会让所有端误判「数据变了」 */
+  const publishedAt = (old && old.version === version && old.publishedAt)
+    ? old.publishedAt : new Date().toISOString();
+  const mf = { version, publishedAt, app: VERSION, counts, files, note: 'CSV 是团队数据源；构建时自动生成，不要手改' };
+  fs.writeFileSync(mfPath, JSON.stringify(mf, null, 2) + '\n');
+  return mf;
+}
+
+function publishData(destDir) {
+  const mf = buildDataManifest();
+  const dst = path.join(ROOT, destDir, 'data');
+  fs.mkdirSync(dst, { recursive: true });
+  mf.files.forEach(f => fs.copyFileSync(path.join(ROOT, 'data', f), path.join(dst, f)));
+  fs.writeFileSync(path.join(dst, 'manifest.json'), JSON.stringify(mf, null, 2) + '\n');
+  return mf;
+}
+
+// 8) 输出
 if (STUB) {
   const out = path.join(ROOT, 'tmp/stub.html');
   fs.mkdirSync(path.dirname(out), { recursive: true });
   fs.writeFileSync(out, h);
-  console.log('STUB build -> tmp/stub.html', Buffer.byteLength(h));
+  const mf = publishData('dist');
+  console.log('STUB build -> tmp/stub.html', Buffer.byteLength(h), '| data', mf.version, JSON.stringify(mf.counts));
 } else {
   fs.writeFileSync(path.join(ROOT, 'signal-board.html'), h);
   fs.mkdirSync(path.join(ROOT, 'dist'), { recursive: true });
@@ -132,7 +185,13 @@ if (STUB) {
   fs.mkdirSync(path.join(ROOT, 'docs'), { recursive: true });
   fs.writeFileSync(path.join(ROOT, 'docs/index.html'), h);
   fs.copyFileSync(path.join(ROOT, 'supabase/schema.sql'), path.join(ROOT, 'docs/schema.sql'));
+  /* 项目公共配置也发一份，方便不开代码就能核对连接器 */
+  fs.mkdirSync(path.join(ROOT, 'docs/config'), { recursive: true });
+  fs.copyFileSync(path.join(ROOT, 'config/app.config.json'), path.join(ROOT, 'docs/config/app.config.json'));
+  const mf = publishData('dist');
+  publishData('docs');
   console.log('written bytes:', Buffer.byteLength(h), 'lines:', h.split('\n').length);
+  console.log('data version:', mf.version, '| publishedAt:', mf.publishedAt, '|', JSON.stringify(mf.counts));
 }
 
 console.log('version:', VERSION, '| app bytes:', Buffer.byteLength(js), '| cloud:', STUB ? 'local' : OPS_CFG.url);

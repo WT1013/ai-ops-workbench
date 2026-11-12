@@ -1,14 +1,16 @@
 {
   "name": "ai-ops-workbench",
-  "version": "4.4.0",
+  "version": "6.0.0",
   "private": true,
-  "description": "AI运营组工作台 —— 多店铺运营工作台（单文件前端 + 团队云端数据）",
+  "description": "AI运营组工作台 —— 多店铺运营工作台（单文件前端 + Supabase 云端库 + CSV 数据源 + 只读/编辑双模式）",
   "scripts": {
     "build": "node src/build.cjs",
     "build:stub": "node src/build.cjs --stub",
     "check": "node scripts/check.cjs",
     "serve": "node scripts/serve.cjs 8790",
-    "test": "node tests/regression.cjs"
+    "export:data": "node scripts/export-data.cjs",
+    "test": "node tests/regression.cjs",
+    "test:collab": "node tests/collab.cjs"
   },
   "engines": {
     "node": ">=18"

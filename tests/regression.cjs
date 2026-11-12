@@ -75,8 +75,20 @@ const check = (name, ok, detail) => {
   }
   check('七个页面渲染', seen.every(Boolean), seen);
 
-  /* 4) 目标值：改一次 → 写进本机配置 */
+  /* 4) 目标值：只读时改不动 → 解锁后可改并落本机 */
   await page.evaluate(() => { const b = document.querySelector('#nav [data-go="board"]'); if (b) b.click(); });
+  await page.waitForTimeout(500);
+  const roBlocked = await page.evaluate(() => {
+    const i = document.querySelector('[data-tgt="adopt"]');
+    i.value = '66';
+    i.dispatchEvent(new Event('change', { bubbles: true }));
+    return document.body.classList.contains('ro');
+  });
+  await page.waitForTimeout(500);
+  const cfgRo = await page.evaluate(k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, LS_CFG);
+  check('只读预览时目标值改不动', roBlocked === true && !(cfgRo && Number(cfgRo.targets.adopt) === 66), cfgRo && cfgRo.targets);
+
+  await page.evaluate(() => { window.__OPS__.setEditMode(true, true); window.__OPS__.go('board'); });
   await page.waitForTimeout(500);
   await page.evaluate(() => {
     const i = document.querySelector('[data-tgt="adopt"]');
@@ -85,7 +97,7 @@ const check = (name, ok, detail) => {
   });
   await page.waitForTimeout(900);
   const cfg = await page.evaluate(k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, LS_CFG);
-  check('目标值立即生效并落本机', cfg && Number(cfg.targets.adopt) === 66, cfg && cfg.targets);
+  check('成员编辑时目标值生效并落本机', cfg && Number(cfg.targets.adopt) === 66, cfg && cfg.targets);
 
   /* 5) 我是谁：填名字 → 侧栏显示 + 本机记住 */
   await page.evaluate(() => document.getElementById('uOut').click());

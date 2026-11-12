@@ -1,137 +1,130 @@
 # AI运营组工作台
 
-多店铺运营工作台。**单文件前端 + Supabase 云端数据库**：链接发给谁，谁打开就能用，全组共用一份数据，谁改所有人都能看到。
+多店铺运营工作台。**单文件前端 + Supabase 云端库 + CSV 数据源**：
+外部链接打开是**只读预览**，项目成员输团队编辑码后可编辑，全组共用一份数据。
 
 - 线上入口：https://wt1013.github.io/ai-ops-workbench/
-- 源码仓库：https://github.com/WT1013/ai-ops-workbench
-- 当前版本：v5.0（`src/build.cjs` 里的 `VERSION`）
+- 源码仓库：https://github.com/WT1013/ai-ops-workbench（私有）
+- 当前版本：v6.0（`config/app.config.json → app.version`）
 - 云端：Supabase 项目 `kocuowtqklojxkhzlwpe`，表 `ops_records` / `ops_kv`
-
-> 云端方式与「远山驾驶舱」一致：前端拿发布密钥直连数据库，不需要后端服务、不需要登录。
-> 第一次部署到新 Supabase 项目时，先把 `supabase/schema.sql` 在 SQL Editor 跑一次。
+- **迁移与协作规程：[MIGRATION.md](MIGRATION.md)**（权限、发布、防覆盖都在里面）
 
 ---
 
 ## 1. 三十秒上手
 
 ```bash
-# 只需要 Node 18+，没有其他依赖
 npm run check          # 自检：语法 / 禁用词 / 体积
-npm run build          # 构建 → dist/index.html + docs/index.html（发布目录）
+npm run build          # 构建 → dist/ + docs/（含 data/ 与 config/）
 npm run serve          # 本地预览 http://127.0.0.1:8790/
 ```
 
-必须用 `npm run serve` 用 http 打开，**不要双击 html 用 file:// 打开**——浏览器会拦云端请求。
+必须用 `npm run serve` 以 http 打开，**不要双击 html 用 file:// 打开**——浏览器会拦云端请求，编辑码也校验不了。
 
-打开就是主界面，没有登录。左下角点铅笔填个名字，之后你改的东西会记上这个名字。
+## 2. 权限模型（v6.0 新增）
 
-## 2. 目录结构
+| 谁 | 能看到 | 能改 | 怎么进 |
+|---|---|---|---|
+| 外部访问者 | 全部页面与数据 | 什么都不行 | 直接打开链接 |
+| 项目成员 | 同上 | 数据 / 文案 / 页面 / 自定义代码 | 右上角徽标 → 输团队编辑码 |
+| 项目管理员 | 同上 | 以上全部 + 发布 | 同上 + 仓库权限 |
+
+- 只读是**默认态**：写入口不渲染，数据层二次拦截（`store.add/update/remove/...` 全部有门禁）。
+- 编辑码只存 SHA-256 哈希在 `config/app.config.json`，代码里没有明文；换码 = 改哈希 + 重新发布。
+- 前端只读是软闸，硬隔离方案见 [MIGRATION.md 第 3.4 节](MIGRATION.md)。
+
+## 3. 两套数据源
+
+| 通道 | 文件 / 表 | 谁改 | 生效 |
+|---|---|---|---|
+| CSV | `data/*.csv`（8 张表） | 会 git 的成员 | 提交 + 发布后，所有人 60 秒内自动刷新 |
+| 云端 | `ops_records` / `ops_kv` | 有编辑码的成员 | 保存即写库，其他人 60 秒内拉到 |
+
+合并规则「谁更晚谁生效」：界面改动带 `__mt`，晚于 CSV 发布时间就保留界面版本；界面新建的行不会被 CSV 删掉。
+细节见 [MIGRATION.md 第 5.2 节](MIGRATION.md) 与 [data/README.md](data/README.md)。
+
+## 4. 目录结构
 
 ```
+config/app.config.json   项目公共配置：云端连接 / 数据源 / 编辑码哈希 / 公共连接器
+data/                    CSV 数据源 + manifest.json（构建生成）
+  shops accounts metrics alerts tasks qc assets apis .csv
+skills/                  项目用到的技能指令（SKILL.md 抄录）
 src/
-  build.cjs              构建脚本（模块清单 + 版本号 + 云配置 + 安全闸都在这）
-  js/                    逻辑，按顺序拼接进同一个作用域
-    00-head.js           IIFE 开头、$ / esc / num / avg 等工具函数
-    01-metrics.js        指标定义（唯一权威表，改指标名先改这里）
-    02-seed.js           种子数据：128 家店 / 291 条账号 / 28 条指标
-    03-store.js          Supabase 连接、kv 读写、差分同步、本机兜底
-    04-aggregate.js      聚合统计、同步状态文案
-    05-overlay.js        toast / 弹窗
-    06-forms.js          表单定义、字段渲染、提交
-    07-import.js         指标导入（CSV / TSV / JSON）
-    08-ui-kit.js         图标、chip、目标值配置条等小件
-    09-chart.js          折线图
-    10~16-page-*.js      七个页面各一个文件
-    17-router.js         路由与导航渲染
-    18-nav-icon.js       侧栏图标
-    19-chart-events.js   图表交互
-    20-events.js         全局事件绑定
-    21-theme.js          浅色 / 深色主题
-    22-auth.js           打开即用、我的名字、云端状态提示、自动同步
-    29-init.js           入口调用
-    99-close.js          IIFE 收尾
-  styles/                样式，按顺序拼接（基础 → 配色 → 各页面 → 侧栏 → 启动页）
-   01-base.css 02-theme.css 03-stores.css 04-account-bar.css 05-rail.css 06-shell.css
-supabase/schema.sql      Supabase 建表 + 读写策略（新环境先跑这个）
-signal-board-v1-static.html   HTML 骨架（head / 侧栏 / 顶栏 / 挂载点）
-scripts/
-  serve.cjs              本地静态服务
-  check.cjs              自检脚本
-tests/
-  regression.cjs         端到端回归（本机模式，不碰线上数据）
-docs/                    GitHub Pages 发布目录（index.html + schema.sql）
-dist/index.html          构建产物
+  build.cjs              构建：模块清单、版本号、注入配置、生成数据清单、安全闸
+  js/                    逻辑，按顺序拼进同一个作用域（25 个模块）
+    00-head              工具函数
+    01-metrics           指标定义（唯一权威）
+    02-seed              离线种子数据（CSV 不可用时的兜底）
+    03-store             云端读写、差分同步、写入门禁
+    04-aggregate         聚合统计
+    05-overlay           弹窗 / toast
+    06-forms             表单定义与提交
+    07-import            指标导入
+    08-ui-kit            通用组件（表格 / chip / 内联编辑）
+    09-chart             折线图
+    10~16-page-*         七个业务页面
+    17~20                路由、导航、图表交互、全局事件
+    21-theme             主题
+    22-auth              启动流程、我的名字、远端拉取
+    23-page-settings     设置页（文案 / 自定义代码 / 数据源状态）
+    24-data-sync         CSV 拉取、轮询、时间戳合并
+    25-mode              只读 / 编辑模式、编辑码
+    29-init / 99-close   入口与出口
+  styles/                6 个样式模块
+supabase/schema.sql      建表 + RLS + 授权
+signal-board-v1-static.html  HTML 骨架
+scripts/                 check / serve / export-data
+tests/                   regression（功能回归）+ collab（权限与数据源）
+docs/                    GitHub Pages 发布目录
 ```
 
-## 3. 我要改 X，该动哪个文件
+## 5. 我要改 X，该动哪个文件
 
 | 想改什么 | 改哪里 |
 |---|---|
-| 加/改一个指标 | `js/01-metrics.js`，再检查 `08-ui-kit.js` 和对应 `page-*.js` 的展示 |
+| 店铺 / 账号 / 指标等批量数据 | `data/*.csv`（改完 `npm run build`） |
+| 加/改一个指标 | `js/01-metrics.js` + `08-ui-kit.js` + 对应 `page-*.js` |
 | 首页信号带 | `js/10-page-signal.js` |
 | 数据看板、图表 | `js/11-page-board.js` + `js/09-chart.js` |
-| 店铺库（分组、筛选、账号面板） | `js/12-page-stores.js` + `styles/03-stores.css` |
-| 任务 / 资产 / 风控 / 接口页 | `js/14-page-tasks.js`、`13-page-assets.js`、`15-page-qc.js`、`16-page-api.js` |
-| 新增/删除字段 | `js/06-forms.js` 里的 `FORMS`，然后同步表格列、导入列、种子数据 |
-| 侧栏、导航 | `js/17-router.js`、`js/18-nav-icon.js` + `styles/05-rail.css` |
-| 配色 | `styles/02-theme.css`（全局变量）与 `styles/05-rail.css`（侧栏自带皮肤） |
-| 我的名字、云端提示 | `js/22-auth.js` |
-| 云端地址 / 密钥 / 表名 / 版本号 | `src/build.cjs` 顶部 `OPS_CFG`、`VERSION` |
+| 店铺库 | `js/12-page-stores.js` + `styles/03-stores.css` |
+| 任务 / 资产 / 风控 / 接口 | `js/14` `13` `15` `16-page-*.js` |
+| 字段增删 | `js/06-forms.js` 的 `FORMS` + 表格列 + CSV 表头 + 种子 |
+| 只读 / 编辑权限 | `js/25-mode.js` + `styles/06-shell.css` |
+| 数据源同步规则 | `js/24-data-sync.js` |
+| 云端地址 / 表名 / 轮询间隔 / 编辑码 / 连接器 | `config/app.config.json` |
+| 侧栏与导航 | `js/17-router.js` `js/18-nav-icon.js` + `styles/05-rail.css` |
+| 配色 | `styles/02-theme.css` |
 
-## 4. 数据存在哪
-
-Supabase（一个托管 Postgres），两张表：
-
-| 表 | 内容 |
-|---|---|
-| `ops_records` | 一行一条业务记录：`key`、`coll`(集合名)、`rec_id`、`data`(JSONB)、`updated_by` |
-| `ops_kv` | 团队级配置：`cfg`（目标值 + 统计周期） |
-
-- 页面渲染只读内存；写操作走差分 upsert，只推改过的行，300ms 合并一次，200 行一批。
-- 目标值等配置谁改都写同一行，看板右侧会显示「团队云端 · 某某 刚刚更新」。
-- 每 60 秒自动对一次云端，切回标签页立刻对一次；弹窗打开或正在输入时不打断。
-- 云端连不上时自动落 localStorage（`wb.signal.v3.db`），顶部挂常驻提示，恢复后自动补传。
-- 账号只记「绑定人 + 手机后四位」，**任何形式的密码都不进工作台**，构建脚本会拦截。
-
-## 5. 发布
+## 6. 发布
 
 ```bash
-npm run check && npm run build      # 产物会同时写到 docs/index.html
-```
-
-然后提交推送到 GitHub，Pages 会自动更新（`main` 分支 `/docs` 目录）：
-
-```bash
+npm run check && npm run build
 git add -A && git commit -m "说明改了什么"
 git push origin main
 ```
 
-- 站点：https://wt1013.github.io/ai-ops-workbench/
-- 推送后 1~2 分钟生效；浏览器强刷（Ctrl+F5）避免旧缓存。
-- Pages 的仓库设置：Settings → Pages → Source 选 `Deploy from a branch`，分支 `main`，目录 `/docs`。**改这个设置链接就变了。**
+Pages 1–2 分钟更新，**链接不变**（分支 `main`、目录 `/docs`；改这个设置链接才会变）。
+发布后按 [MIGRATION.md 4.4 节](MIGRATION.md) 做 30 秒自检。
 
-## 6. 改完自测
+## 7. 自测
 
 ```bash
-npm run build:stub                      # 生成 tmp/stub.html（清空密钥 → 本机模式）
-cp tmp/stub.html dist/stub.html
-npm run serve                           # 另开窗口
-npm test                                # 跑 tests/regression.cjs
+npm run build:stub && cp tmp/stub.html dist/stub.html
+npm run serve                       # 另开窗口
+node tests/regression.cjs http://127.0.0.1:8790/stub.html
+node tests/collab.cjs               # 只读 / 解锁 / CSV 热更新
 ```
 
-回归覆盖：打开即用无门禁、种子数据落本机、七页渲染、目标值生效、我的名字、账号表结构、控制台报错。
+需要 playwright；没装就 `PLAYWRIGHT_DIR=/path/to/node_modules npm test`。
 
-需要 playwright，若没装在项目里：
-```bash
-PLAYWRIGHT_DIR=/path/to/node_modules npm test
-```
+## 8. 红线
 
-## 7. 红线
+1. 源码里不写任何密码 / token（构建会失败）。
+2. 不改 `js/03-store.js` 的既有字段名；加字段走兼容读取。
+3. 不改 `config/app.config.json` 里的 Supabase 地址与表名——一改等于换了空库。
+4. 不删 `docs/index.html` 与 `docs/data/`，那是线上入口与数据源。
+5. 不改 CSV 的 `id` 与表头。
+6. 提交前必须 `npm run check` 通过；`main` 走 PR，不 `push -f`。
 
-1. 不要在源码里写死任何密码、token（构建会失败）。
-2. 不要改 `js/03-store.js` 里的既有字段名，否则云端已有数据读不出来；要加字段走兼容读取。
-3. 不要改 `OPS_CFG` 里的 Supabase 地址和表名——一改就等于换了一个空库。
-4. 不要删 `docs/` 下的 `index.html`，那是线上唯一入口。
-5. 提交前必须 `npm run check` 通过。
-
-更多协作规范见 [CONTRIBUTING.md](CONTRIBUTING.md)，版本演变见 [CHANGELOG.md](CHANGELOG.md)。
+协作分工与冲突处理见 [CONTRIBUTING.md](CONTRIBUTING.md)，版本演变见 [CHANGELOG.md](CHANGELOG.md)。

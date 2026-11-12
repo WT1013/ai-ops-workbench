@@ -84,10 +84,76 @@ document.addEventListener('click', e => {
     renderDrill();
     return;
   }
+
+  /* 设置页：恢复默认文案 */
+  const treset = e.target.closest('[data-textreset]');
+  if (treset) {
+    store.texts = {};
+    store.saveTexts().then(() => { applyTexts(); render(); toast('已恢复默认文案', 'ok'); })
+      .catch(err => toast('恢复失败：' + ((err && err.message) || err), 'bad'));
+    return;
+  }
+
+  /* 设置页：保存自定义 CSS / JS */
+  const csave = e.target.closest('[data-codesave]');
+  if (csave) {
+    const css = (($('#setCss') || {}).value) || '';
+    const js = (($('#setJs') || {}).value) || '';
+    if (csave.dataset.codesave === 'js') {
+      const bad = checkJs(js);
+      if (bad) { toast('脚本有语法错误，未保存：' + bad, 'bad'); return; }
+    }
+    store.saveCode(css, js)
+      .then(() => { applyUserCode(); toast('已保存并生效 · 所有人刷新后同样生效', 'ok'); })
+      .catch(err => toast('保存失败：' + ((err && err.message) || err), 'bad'));
+    return;
+  }
+
+  const cclear = e.target.closest('[data-codeclear]');
+  if (cclear) {
+    confirmDialog('清空自定义代码', '将删除自定义的 CSS 与 JS，外观回到默认。这个操作全组都受影响。', () => {
+      store.clearCode().then(() => {
+        const s = document.getElementById('userCss');
+        if (s) s.remove();
+        render();
+        toast('已清空自定义代码', 'ok');
+      });
+    }, '确认清空');
+    return;
+  }
+
+  /* 设置页：立即检查数据源（只读模式下也允许，纯读取） */
+  const dr = e.target.closest('[data-datarefresh]');
+  if (dr) {
+    refreshDataCsv(false).then(changed => {
+      renderDataStatus();
+      if (!changed) toast(dataCache ? '已是最新（' + dataCache.version + '）' : '数据源未连上：' + dataErr, changed ? 'ok' : 'bad');
+    });
+    return;
+  }
+
+  /* 表格单元格内联编辑：点一下变输入框 */
+  const cell = e.target.closest('[data-cell]');
+  if (cell && !cell.querySelector('input')) { openCellEdit(cell); return; }
 });
 
 document.addEventListener('change', e => {
   if (e.target.id === 'drillSel') { window.__drillShop = e.target.value; renderDrill(); return; }
+
+  /* 只读模式下即使改了控件也不落库，直接把界面恢复成库里的值 */
+  if (!canEdit() && e.target.closest('[data-tgt],[data-range],[data-text]')) {
+    denyWrite(); render(); return;
+  }
+
+  /* 设置页：文案改动 → 存云端 → 立即刷新界面上对应文字 */
+  const tx = e.target.closest('[data-text]');
+  if (tx) {
+    store.setText(tx.dataset.text, tx.value)
+      .then(() => { applyTexts(); toast('已保存 · 全组刷新后同样生效', 'ok'); })
+      .catch(err => toast('保存失败：' + ((err && err.message) || err), 'bad'));
+    return;
+  }
+
   const t = e.target.closest('[data-tgt]');
   if (t) {
     const v = num(t.value);

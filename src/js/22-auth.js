@@ -77,7 +77,13 @@ async function pullLatest(silent) {
   const ae = document.activeElement;
   if (ae && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)) return false;
   const snap = JSON.stringify(store.db) + '|' + JSON.stringify(store.cfg);
+  const oldCode = JSON.stringify(store.code);
   try { await store.hydrate({ noSeed: true }); } catch (e) { return false; }
+  await store.loadTeam();
+  /* 云端拿到的是「界面改过的」部分，再把 CSV 数据源合回来（CSV 只覆盖更旧的记录） */
+  if (typeof mergeCsvData === 'function') mergeCsvData();
+  applyTexts();
+  if (JSON.stringify(store.code) !== oldCode) applyUserCode();
   if (snap === JSON.stringify(store.db) + '|' + JSON.stringify(store.cfg)) return false;
   if (!store.cloudErr) hideCloudNotice();
   render();
@@ -144,9 +150,15 @@ async function enterApp() {
   let r = null;
   try { r = await store.hydrate(); }
   catch (e) { r = null; store.cloudErr = (e && e.message) || String(e); }
+  await store.loadTeam();
+  /* 数据源：先把 CSV 合进来再画第一帧，避免先闪一下旧数据 */
+  try { await loadDataCsv(true); mergeCsvData(); } catch (e) {}
   hideLoading();
   setUserCard();
   startApp();
+  applyTexts();
+  applyUserCode();
+  applyMode();
   syncNotice();
   if (r && r.seeded) toast('已初始化团队数据 · ' + r.rows + ' 条记录', 'ok');
 }

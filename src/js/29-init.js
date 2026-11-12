@@ -1,6 +1,9 @@
 /* ---------- init ---------- */
 store.initCfg();
+initMode();
 (async function boot() {
   await auth.restore();
-  enterApp();
+  await enterApp();
+  initMode();
+  startDataSync();
 })();

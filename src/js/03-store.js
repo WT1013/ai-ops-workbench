@@ -75,6 +75,8 @@ const store = {
   cfg: { targets: { adopt: 60, gen: 75, conv: 40, resp: 98 }, range: 14 },
   session: null,
   cfgMeta: { at: 0, by: '' },   // 配置最后修改人/时间（团队共享）
+  texts: {},         // 文案覆盖：'nav.board.name' -> '自定义名'
+  code: null,        // 自定义样式/脚本：{ css, js, at, by }
   synced: {},        // key -> 上次同步时的 JSON 快照
   _timer: 0, _flushing: null, _again: false, _cfgTimer: 0,
 
@@ -90,7 +92,51 @@ const store = {
   },
   cfgCache() { try { localStorage.setItem(LS_CFG, JSON.stringify(this.cfg)); } catch (e) {} },
 
-  /* 从云端读团队配置；云端还没有就写默认值上去 */
+  /* 团队级文案与自定义代码：和 cfg 一样存云端 kv，谁改所有人可见 */
+  async loadTeam() {
+    if (!cloud) {
+      try {
+        const t = localStorage.getItem('wb.signal.v3.texts');
+        if (t) this.texts = JSON.parse(t) || {};
+        const c = localStorage.getItem('wb.signal.v3.code');
+        if (c) this.code = JSON.parse(c);
+      } catch (e) {}
+      return;
+    }
+    try { this.texts = (await kvGet('texts')) || {}; } catch (e) {}
+    try { this.code = await kvGet('code'); } catch (e) {}
+  },
+  cacheTeam() {
+    try {
+      localStorage.setItem('wb.signal.v3.texts', JSON.stringify(this.texts || {}));
+      localStorage.setItem('wb.signal.v3.code', JSON.stringify(this.code || null));
+    } catch (e) {}
+  },
+  async saveTexts() {
+    this.cacheTeam();
+    if (!cloud) return;
+    await kvSet('texts', this.texts);
+  },
+  async setText(k, v) {
+    if (!canEdit()) { denyWrite(); return; }
+    const val = String(v == null ? '' : v).trim();
+    if (val) this.texts[k] = val; else delete this.texts[k];
+    try { await this.saveTexts(); } catch (e) { toast('文案保存失败：' + ((e && e.message) || e), 'bad'); }
+  },
+  async saveCode(css, js) {
+    if (!canEdit()) { denyWrite(); return; }
+    this.code = { css: css || '', js: js || '', at: Date.now(), by: myName() };
+    this.cacheTeam();
+    if (!cloud) { toast('已存在本机（云端未连接）', 'ok'); return; }
+    await kvSet('code', this.code);
+  },
+  async clearCode() {
+    if (!canEdit()) { denyWrite(); return; }
+    this.code = null;
+    this.cacheTeam();
+    if (cloud) await kvSet('code', { css: '', js: '', at: Date.now(), by: myName() });
+  },
+
   async loadCfg() {
     let c = null, reachable = false;
     try { c = await kvGet('cfg'); reachable = !!cloud; } catch (e) { reachable = false; }
@@ -105,6 +151,7 @@ const store = {
   },
   /* 改配置：本地缓存即时生效，400ms 后写云端，全组同步 */
   saveCfg() {
+    if (!canEdit()) { denyWrite(); return; }
     this.cfgCache();
     clearTimeout(this._cfgTimer);
     this._cfgTimer = setTimeout(() => { this.pushCfg(); }, 400);
@@ -237,27 +284,37 @@ const store = {
   list(k) { return (this.db[k] || []).slice(); },
   get(k, id) { return (this.db[k] || []).find(x => x.id === id) || null; },
   add(k, obj) {
-    const rec = Object.assign({ id: uid(k[0]) }, obj);
+    if (!canEdit()) { denyWrite(); return null; }
+    const rec = Object.assign({ id: uid(k[0]) }, obj, { __mt: Date.now(), __src: 'ui' });
     this.db[k].unshift(rec); this.save(); return rec;
   },
   update(k, id, patch) {
+    if (!canEdit()) { denyWrite(); return null; }
     const r = this.get(k, id); if (!r) return null;
-    Object.assign(r, patch); this.save(); return r;
+    Object.assign(r, patch, { __mt: Date.now() }); this.save(); return r;
   },
   remove(k, id) {
+    if (!canEdit()) { denyWrite(); return; }
     this.db[k] = this.db[k].filter(x => x.id !== id); this.save();
   },
   upsertMetric(rec) {
+    if (!canEdit()) { denyWrite(); return null; }
     const hit = this.db.metrics.find(m => m.shop === rec.shop && m.date === rec.date);
-    if (hit) { Object.assign(hit, rec); this.save(); return 'update'; }
-    this.db.metrics.push(Object.assign({ id: uid('m') }, rec)); this.save(); return 'insert';
+    if (hit) { Object.assign(hit, rec, { __mt: Date.now() }); this.save(); return 'update'; }
+    this.db.metrics.push(Object.assign({ id: uid('m') }, rec, { __mt: Date.now(), __src: 'ui' })); this.save(); return 'insert';
   },
   clearAll() {
+    if (!canEdit()) { denyWrite(); return; }
     KINDS.forEach(k => { this.db[k] = []; });
     this.db.meta = { seed: false, ver: DB_VER };
     this.save();
   }
 };
+
+/* 只读模式下的统一拦截：任何漏掉的写入口都走这里，不会静默改数据 */
+function denyWrite() {
+  toast('只读预览：当前没有编辑权限。项目成员点右上角模式徽标输码进入编辑。', 'bad');
+}
 
 /* 「我是谁」：记在本机、不进云端；写库时带上改动人，方便追溯是谁改的。
    打开即用，不需要登录，名字只用于标记。 */

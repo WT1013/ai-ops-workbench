@@ -67,3 +67,54 @@ html[data-theme="dark"] .boot{
 }
 @keyframes bootspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.boot-spin{animation:none}}
+
+/* ---------- 工作台设置页 ---------- */
+.set-panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+.set-tbl{width:100%;border-collapse:collapse}
+.set-tbl td{padding:6px 8px;border-bottom:1px solid var(--line);font-size:12.5px;vertical-align:middle}
+.set-tbl tr:last-child td{border-bottom:none}
+.set-lb{color:var(--ink2);width:132px;white-space:nowrap}
+.set-def{color:var(--ink3);font-size:11.5px;width:210px}
+.set-inp{width:100%;height:30px;padding:0 9px;border:1px solid var(--line2);border-radius:7px;background:var(--panel2);color:var(--ink);font-size:12.5px;outline:none}
+.set-inp:focus{border-color:var(--amber);background:var(--panel)}
+.set-tip{font-size:11.5px;color:var(--ink3);line-height:1.7;margin-top:8px}
+.set-tip code{font-family:var(--mono);background:var(--panel3);padding:1px 5px;border-radius:4px;color:var(--ink2)}
+.set-code{width:100%;min-height:150px;padding:10px 12px;border:1px solid var(--line2);border-radius:9px;background:var(--panel2);color:var(--ink);font-family:var(--mono);font-size:12px;line-height:1.65;resize:vertical;outline:none;box-sizing:border-box}
+.set-code:focus{border-color:var(--amber);background:var(--panel)}
+.set-acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+
+/* ---------- 表格单元格内联编辑 ---------- */
+td.cell{cursor:text}
+td.cell:hover{background:var(--panel3);box-shadow:inset 0 0 0 1px var(--line2)}
+td.cell.editing{background:var(--panel);box-shadow:inset 0 0 0 1px var(--amber);padding:2px 4px}
+.cell-inp{width:100%;min-width:60px;height:24px;padding:0 4px;border:none;border-radius:3px;background:transparent;color:var(--ink);font-size:inherit;font-family:inherit;outline:none}
+
+/* ---------- 访问模式徽标（只读预览 / 成员编辑） ---------- */
+.mode-pill{
+  height:24px;padding:0 10px;border-radius:12px;cursor:pointer;
+  border:1px solid var(--line2);background:var(--panel);color:var(--ink2);
+  font-size:11px;font-family:inherit;white-space:nowrap;line-height:22px;
+  transition:.12s linear;
+}
+.mode-pill:hover{border-color:var(--amber);color:var(--ink)}
+.mode-pill.on{background:var(--good-soft);border-color:var(--good);color:var(--good)}
+body.ro .mode-pill{background:var(--panel3)}
+
+/* 只读预览：隐藏所有写入口，保留完整浏览体验 */
+body.ro .acts,
+body.ro [data-new],
+body.ro [data-del],
+body.ro [data-edit],
+body.ro [data-done],
+body.ro [data-import],
+body.ro [data-clear-seed],
+body.ro [data-textreset],
+body.ro [data-codesave],
+body.ro [data-codeclear]{display:none !important}
+body.ro td.cell{cursor:default}
+body.ro td.cell:hover{background:transparent;box-shadow:none}
+body.ro .set-inp,
+body.ro .set-code,
+body.ro #cfgBar input,
+body.ro #cfgBar select{pointer-events:none;opacity:.65}
+body.ro .cfgbar-tip{display:none}

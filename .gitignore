@@ -2,6 +2,7 @@
 node_modules/
 tmp/
 dist/stub.html
+dist/data/
 signal-board.html
 _shot*/
 *.log
