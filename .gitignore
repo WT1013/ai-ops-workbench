@@ -1,0 +1,19 @@
+# 忽略构建产物与本地临时文件
+node_modules/
+tmp/
+dist/stub.html
+signal-board.html
+_shot*/
+*.log
+.DS_Store
+Thumbs.db
+
+# 工具内部状态，不参与协作
+.workbuddy/
+dist/.workbuddy/
+dist/.wbapp_*.genie
+
+# 本机套壳配置（含个人路径，勿提交）
+.vscode/
+.idea/
+*.zip

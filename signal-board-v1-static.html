@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>工作台 · 信号带</title>
+<style>
+/* ============ tokens ============ */
+:root{
+  --sans:"PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",system-ui,sans-serif;
+  --mono:"JetBrains Mono","Cascadia Mono",Consolas,"SF Mono",ui-monospace,monospace;
+  --rail:248px;
+  --r:2px;
+}
+html[data-theme="dark"]{
+  --bg:#0A0E14;
+  --panel:#10151F;
+  --panel2:#151C29;
+  --panel3:#1A2231;
+  --line:#1D2532;
+  --line2:#2A3444;
+  --ink:#E7ECF3;
+  --ink2:#98A5B8;
+  --ink3:#5A6779;
+  --amber:#F0A030;
+  --amber-soft:rgba(240,160,48,.13);
+  --good:#31C48D;
+  --good-soft:rgba(49,196,141,.12);
+  --warn:#E5B23C;
+  --warn-soft:rgba(229,178,60,.12);
+  --bad:#E85C46;
+  --bad-soft:rgba(232,92,70,.12);
+  --info:#5B9BD5;
+  --info-soft:rgba(91,155,213,.12);
+  --shadow:0 1px 0 rgba(255,255,255,.02), 0 12px 28px -18px rgba(0,0,0,.9);
+  --grid:#232C3B;
+}
+html[data-theme="light"]{
+  --bg:#F4F5F2;
+  --panel:#FFFFFF;
+  --panel2:#FAFAF7;
+  --panel3:#F0F1EC;
+  --line:#DBDCD3;
+  --line2:#C3C5B9;
+  --ink:#1A1C1B;
+  --ink2:#5C635E;
+  --ink3:#8E948E;
+  --amber:#B96D0C;
+  --amber-soft:rgba(185,109,12,.10);
+  --good:#127A57;
+  --good-soft:rgba(18,122,87,.10);
+  --warn:#96700F;
+  --warn-soft:rgba(150,112,15,.10);
+  --bad:#B23A26;
+  --bad-soft:rgba(178,58,38,.10);
+  --info:#2C6291;
+  --info-soft:rgba(44,98,145,.10);
+  --shadow:0 1px 2px rgba(26,28,27,.05), 0 10px 24px -20px rgba(26,28,27,.4);
+  --grid:#E8E9E3;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--sans);
+  font-size:13px;
+  line-height:1.55;
+  background:var(--bg);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  text-wrap:pretty;
+  overflow:hidden;
+}
+::selection{background:var(--amber-soft);color:var(--ink)}
+button{font-family:inherit;font-size:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input{font-family:inherit;font-size:inherit}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+/* ============ shell ============ */
+.app{display:grid;grid-template-columns:var(--rail) 1fr;height:100vh}
+
+
+.main{display:flex;flex-direction:column;min-width:0;height:100vh}
+.topbar{
+  height:52px;flex:0 0 52px;
+  border-bottom:1px solid var(--line);
+  background:var(--panel);
+  display:flex;align-items:center;gap:16px;
+  padding:0 24px;
+}
+.crumb{font-size:12px;color:var(--ink3);display:flex;align-items:center;gap:8px}
+.crumb b{color:var(--ink);font-weight:500;font-size:13px}
+.crumb i{color:var(--line2);font-style:normal}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.stamp{
+  font-family:var(--mono);font-size:11px;color:var(--ink3);
+  border:1px solid var(--line);padding:3px 8px;border-radius:var(--r);
+}
+.stamp b{color:var(--ink2);font-weight:400}
+.icon-btn{
+  width:28px;height:28px;display:grid;place-items:center;
+  border:1px solid var(--line);border-radius:var(--r);color:var(--ink2);
+  transition:.12s linear;
+}
+.icon-btn:hover{border-color:var(--line2);color:var(--ink);background:var(--panel2)}
+
+.viewport{flex:1;overflow-y:auto;overflow-x:hidden;padding:22px 24px 72px;scroll-behavior:smooth}
+.viewport::-webkit-scrollbar{width:10px}
+.viewport::-webkit-scrollbar-thumb{background:var(--line2);border-radius:10px;border:3px solid var(--bg)}
+
+.view{display:none;animation:fade .22s ease-out}
+.view.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ============ primitives ============ */
+.sec-head{display:flex;align-items:baseline;gap:12px;margin:0 0 14px}
+.sec-head h2{font-size:16px;font-weight:600;letter-spacing:.01em}
+.sec-head .sub{font-size:12px;color:var(--ink3)}
+.sec-head .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.divider{height:1px;background:var(--line);margin:26px 0}
+.block-title{
+  display:flex;align-items:center;gap:10px;
+  font-size:11px;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink3);margin:0 0 10px;
+}
+.block-title::after{content:"";flex:1;height:1px;background:var(--line)}
+
+.card{
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--r);box-shadow:var(--shadow);
+}
+.pad{padding:16px 18px}
+
+.chip{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.02em;
+  padding:1.5px 6px;border-radius:var(--r);white-space:nowrap;
+  border:1px solid transparent;
+}
+.chip.p0{color:var(--bad);background:var(--bad-soft);border-color:rgba(232,92,70,.24)}
+.chip.p1{color:var(--warn);background:var(--warn-soft);border-color:rgba(229,178,60,.24)}
+.chip.p2{color:var(--info);background:var(--info-soft);border-color:rgba(91,155,213,.24)}
+.chip.ok{color:var(--good);background:var(--good-soft);border-color:rgba(49,196,141,.24)}
+.chip.mute{color:var(--ink3);background:var(--panel3);border-color:var(--line)}
+.chip.amber{color:var(--amber);background:var(--amber-soft);border-color:rgba(240,160,48,.26)}
+
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:12px;padding:5px 11px;border-radius:var(--r);
+  border:1px solid var(--line2);color:var(--ink2);background:var(--panel2);
+  transition:.12s linear;white-space:nowrap;
+}
+.btn:hover{color:var(--ink);border-color:var(--ink3);background:var(--panel3)}
+.btn.primary{
+  background:var(--amber);border-color:var(--amber);color:#0A0E14;font-weight:500;
+}
+.btn.primary:hover{filter:brightness(1.08)}
+html[data-theme="light"] .btn.primary{color:#fff}
+.btn.ghost{background:transparent;border-color:var(--line)}
+.btn.sm{font-size:11px;padding:3px 8px}
+
+/* KPI strip */
+.kpis{
+  display:grid;grid-template-columns:repeat(7,1fr);
+  border:1px solid var(--line);border-radius:var(--r);
+  background:var(--panel);overflow:hidden;
+}
+.kpi{
+  padding:13px 14px 12px;border-right:1px solid var(--line);
+  position:relative;transition:background .14s linear;
+}
+.kpi:last-child{border-right:none}
+.kpi:hover{background:var(--panel2)}
+.kpi .v{
+  font-family:var(--mono);font-variant-numeric:tabular-nums;
+  font-size:24px;line-height:1.1;letter-spacing:-.02em;
+}
+.kpi .l{font-size:11px;color:var(--ink3);margin-top:4px;white-space:nowrap}
+.kpi.alert .v{color:var(--bad)}
+.kpi.alert{background:rgba(232,92,70,.05);box-shadow:inset 0 2px 0 rgba(232,92,70,.55)}
+.kpi.warn .v{color:var(--warn)}
+.kpi.good .v{color:var(--good)}
+
+/* alert rows */
+.alist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--panel)}
+.arow{
+  display:grid;grid-template-columns:74px 108px 1fr 92px 92px;
+  align-items:center;gap:14px;
+  padding:11px 16px;border-bottom:1px solid var(--line);
+  transition:background .12s linear;
+}
+.arow:last-child{border-bottom:none}
+.arow:hover{background:var(--panel2)}
+.arow .t{font-size:13px;font-weight:500}
+.arow .d{font-size:11.5px;color:var(--ink3);margin-top:2px}
+.arow .due{font-family:var(--mono);font-size:11px;color:var(--ink3);text-align:right}
+.arow .due.late{color:var(--bad)}
+.arow .act{text-align:right}
+.arow.collapsible{cursor:pointer}
+
+/* insight */
+.insight{
+  border:1px solid var(--line);border-top:2px solid var(--amber);
+  border-radius:var(--r);background:var(--panel);
+  padding:16px 18px;
+}
+.insight h3{
+  font-size:14px;font-weight:600;line-height:1.5;
+  display:flex;gap:9px;align-items:flex-start;
+}
+.insight h3 em{font-style:normal;color:var(--amber);font-family:var(--mono);font-size:11px;padding-top:2px}
+.insight .ev{
+  margin-top:9px;font-size:12px;color:var(--ink2);line-height:1.75;
+  padding-left:20px;
+}
+.insight .ev b{color:var(--ink);font-family:var(--mono);font-weight:500}
+.insight-acts{display:flex;gap:8px;margin-top:13px;padding-left:20px;flex-wrap:wrap}
+
+.dialogues{margin-top:12px;padding-left:20px;display:none;flex-direction:column;gap:8px}
+.dialogues.open{display:flex;animation:fade .18s ease-out}
+.dlg{
+  border:1px solid var(--line);border-radius:var(--r);
+  background:var(--panel2);padding:10px 12px;
+  display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;
+}
+.dlg .q{font-size:12px;color:var(--ink)}
+.dlg .r{font-size:11.5px;color:var(--ink3);margin-top:3px}
+.dlg .r i{font-style:normal;color:var(--ink2)}
+.dlg .sc{font-family:var(--mono);font-size:11px;text-align:right;white-space:nowrap}
+.dlg .sc b{display:block;font-size:12px}
+.dlg .sc.bad b{color:var(--bad)}
+.dlg .sc.good b{color:var(--good)}
+
+/* chart */
+.chart-wrap{position:relative;overflow-x:auto;overflow-y:hidden}
+.chart-head{display:flex;align-items:flex-start;gap:16px;margin-bottom:6px;flex-wrap:wrap}
+.legend{display:flex;gap:14px;align-items:center;margin-left:auto}
+.legend span{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink2);font-family:var(--mono)}
+.legend i{width:14px;height:2px;border-radius:2px;display:block}
+.legend i.dash{background:none;border-top:1px dashed var(--ink3);height:0}
+svg.chart{width:100%;height:auto;display:block;overflow:visible}
+.axis text{font-family:var(--mono);font-size:10px;fill:var(--ink3)}
+.gl{stroke:var(--grid);stroke-width:1}
+.gl.zero{stroke:var(--line2)}
+.target{stroke:var(--ink3);stroke-width:1;stroke-dasharray:3 4;opacity:.55}
+.line-a{fill:none;stroke:var(--amber);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.line-b{fill:none;stroke:var(--info);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.dot{stroke:var(--panel);stroke-width:2}
+.endlabel{font-family:var(--mono);font-size:10.5px;font-weight:500}
+.tip{
+  position:absolute;pointer-events:none;opacity:0;transform:translate(-50%,-100%);
+  background:var(--panel3);border:1px solid var(--line2);border-radius:var(--r);
+  padding:7px 9px;font-size:11px;line-height:1.6;white-space:nowrap;color:var(--ink);
+  box-shadow:0 10px 24px -8px rgba(0,0,0,.7);transition:opacity .1s linear;z-index:6;
+}
+.tip.on{opacity:1}
+.tip .row{display:flex;gap:12px;justify-content:space-between;font-family:var(--mono)}
+.tip .row em{font-style:normal;color:var(--ink2)}
+.tip .hd{font-family:var(--mono);font-size:10px;color:var(--ink2);margin-bottom:3px}
+
+.readout{
+  margin-top:14px;padding-top:13px;border-top:1px solid var(--line);
+  font-size:12px;color:var(--ink2);line-height:1.8;
+}
+.readout b{color:var(--ink);font-family:var(--mono);font-weight:500}
+.readout .em{color:var(--amber)}
+
+/* tables */
+table{width:100%;border-collapse:collapse}
+th{
+  font-size:10.5px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink3);font-weight:400;text-align:left;
+  padding:8px 12px;border-bottom:1px solid var(--line2);
+  background:var(--panel2);white-space:nowrap;
+}
+td{padding:9px 12px;border-bottom:1px solid var(--line);font-size:12.5px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr{transition:background .1s linear}
+tbody tr:hover{background:var(--panel2)}
+td.n,th.n{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+td.dim{color:var(--ink3)}
+td.strong{font-weight:500}
+.tbl-wrap{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--panel)}
+.delta{font-family:var(--mono);font-size:11.5px}
+.delta.up{color:var(--good)}
+.delta.down{color:var(--bad)}
+.delta.flat{color:var(--ink3)}
+
+/* store cards */
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.seg{display:flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--panel)}
+.seg button{
+  padding:5px 11px;font-size:12px;color:var(--ink2);
+  border-right:1px solid var(--line);transition:.12s linear;
+}
+.seg button:last-child{border-right:none}
+.seg button.on{background:var(--panel3);color:var(--ink)}
+.seg button:hover{color:var(--ink)}
+.seg button b{font-family:var(--mono);font-weight:400;color:var(--ink3);margin-left:4px;font-size:10.5px}
+.seg button.on b{color:var(--amber)}
+.search{
+  display:flex;align-items:center;gap:7px;
+  border:1px solid var(--line);border-radius:var(--r);background:var(--panel);
+  padding:0 9px;height:28px;min-width:200px;flex:1;max-width:280px;
+  transition:border-color .12s linear;
+}
+.search:focus-within{border-color:var(--amber)}
+.search input{border:none;background:none;outline:none;color:var(--ink);width:100%;font-size:12px}
+.search input::placeholder{color:var(--ink3)}
+.search svg{flex:0 0 auto;color:var(--ink3)}
+select{
+  height:28px;border:1px solid var(--line);border-radius:var(--r);
+  background:var(--panel);color:var(--ink2);font-size:12px;padding:0 7px;
+  font-family:inherit;outline:none;cursor:pointer;
+}
+select:focus{border-color:var(--amber)}
+
+.grid-stores{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.scard{
+  border:1px solid var(--line);border-radius:var(--r);background:var(--panel);
+  padding:13px 14px;transition:.14s linear;cursor:default;position:relative;overflow:hidden;
+}
+.scard:hover{border-color:var(--line2);background:var(--panel2);transform:translateY(-1px)}
+.scard .nm{font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px}
+.scard .meta{font-size:11px;color:var(--ink3);margin-top:3px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.scard .m{
+  margin-top:12px;display:flex;align-items:baseline;gap:6px;
+}
+.scard .m .big{font-family:var(--mono);font-size:22px;letter-spacing:-.02em;line-height:1}
+.scard .m .u{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+.scard .m .st{margin-left:auto;font-size:11px}
+.scard .bar{
+  height:2px;background:var(--panel3);margin-top:10px;border-radius:2px;overflow:hidden;
+}
+.scard .bar i{display:block;height:100%;background:var(--amber);border-radius:2px;transition:width .5s ease-out}
+.scard.hot .bar i{background:var(--bad)}
+.scard.warn .bar i{background:var(--warn)}
+.st-bad{color:var(--bad)}
+.st-warn{color:var(--warn)}
+.st-ok{color:var(--ink3)}
+.empty{
+  grid-column:1/-1;border:1px dashed var(--line2);border-radius:var(--r);
+  padding:34px;text-align:center;color:var(--ink3);font-size:12px;
+}
+
+/* owners */
+.owners{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.owner{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:13px 14px}
+.owner .av{
+  width:26px;height:26px;border-radius:2px;display:grid;place-items:center;
+  background:var(--panel3);color:var(--ink2);font-size:12px;font-weight:500;
+  border:1px solid var(--line2);
+}
+.owner .hd{display:flex;align-items:center;gap:9px}
+.owner .hd .nm{font-size:13px;font-weight:500}
+.owner .hd .rl{font-size:11px;color:var(--ink3)}
+.owner .row2{margin-top:11px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.owner .row2 div{min-width:0}
+.owner .row2 div span{display:block;font-family:var(--mono);font-size:15px;line-height:1.2;white-space:nowrap}
+.owner .row2 div em{font-style:normal;font-size:10px;color:var(--ink3);white-space:nowrap}
+
+/* kanban */
+.kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.col{background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);padding:10px}
+.col-hd{display:flex;align-items:center;gap:8px;padding:2px 4px 10px}
+.col-hd .nm{font-size:12px;color:var(--ink2);letter-spacing:.02em}
+.col-hd .ct{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+.col-hd .dot{width:5px;height:5px;border-radius:50%;background:var(--ink3)}
+.col.doing .dot{background:var(--amber)}
+.col.done .dot{background:var(--good)}
+.tcard{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+  padding:10px 11px;margin-bottom:7px;transition:.12s linear;
+}
+.tcard:last-child{margin-bottom:0}
+.tcard:hover{border-color:var(--line2);transform:translateX(1px)}
+.tcard .tt{font-size:12.5px;line-height:1.45}
+.tcard .tf{display:flex;align-items:center;gap:7px;margin-top:8px;font-size:11px;color:var(--ink3)}
+.tcard .tf .who{color:var(--ink2)}
+.tcard .tf .when{margin-left:auto;font-family:var(--mono);font-size:10.5px}
+.tcard .tf .when.late{color:var(--bad)}
+.tcard.done .tt{color:var(--ink3);text-decoration:line-through;text-decoration-color:var(--line2)}
+
+/* misc blocks */
+.split{display:grid;gap:14px}
+.split.c2{grid-template-columns:1.35fr 1fr}
+.split.c2b{grid-template-columns:1fr 1.3fr}
+.mini-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--panel)}
+.mini-kpis.four{grid-template-columns:repeat(4,1fr)}
+.mini-kpis > div{padding:14px 15px;border-right:1px solid var(--line)}
+.mini-kpis > div:last-child{border-right:none}
+.mini-kpis .v{font-family:var(--mono);font-size:22px;line-height:1.1}
+.mini-kpis .l{font-size:10.5px;color:var(--ink3);margin-top:4px}
+.mini-kpis .v small{font-size:11px;color:var(--ink3);margin-left:2px}
+
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--panel)}
+.flow > div{padding:14px 15px;border-right:1px solid var(--line);position:relative}
+.flow > div:last-child{border-right:none}
+.flow .st{font-family:var(--mono);font-size:10px;color:var(--amber);letter-spacing:.1em}
+.flow .nm{font-size:13px;font-weight:500;margin-top:5px}
+.flow .ds{font-size:11.5px;color:var(--ink3);margin-top:5px;line-height:1.6}
+.flow > div::after{
+  content:"";position:absolute;right:-4px;top:50%;width:7px;height:7px;
+  border-top:1px solid var(--line2);border-right:1px solid var(--line2);
+  transform:translateY(-50%) rotate(45deg);background:var(--panel);z-index:1;
+}
+.flow > div:last-child::after{display:none}
+
+.targets{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--panel)}
+.targets > div{padding:13px 15px;border-right:1px solid var(--line)}
+.targets > div:last-child{border-right:none}
+.targets .nm{font-size:11px;color:var(--ink3)}
+.targets .vals{display:flex;align-items:baseline;gap:6px;margin-top:6px}
+.targets .vals b{font-family:var(--mono);font-size:19px;font-weight:500}
+.targets .vals s{font-family:var(--mono);font-size:11px;color:var(--ink3);text-decoration:none}
+.targets .tagline{margin-top:6px;font-size:10.5px;font-family:var(--mono)}
+
+.note{font-size:11px;color:var(--ink3);margin-top:9px;line-height:1.7}
+.foot{
+  margin-top:34px;padding-top:14px;border-top:1px solid var(--line);
+  display:flex;gap:16px;flex-wrap:wrap;align-items:center;
+  font-size:11px;color:var(--ink3);font-family:var(--mono);
+}
+.foot .sep{color:var(--line2)}
+
+/* responsive */
+@media (max-width:1180px){
+  .kpis{grid-template-columns:repeat(4,1fr)}
+  .kpi:nth-child(4){border-right:none}
+  .kpi:nth-child(n+5){border-top:1px solid var(--line)}
+  .split.c2,.split.c2b{grid-template-columns:1fr}
+  .kanban{grid-template-columns:1fr}
+  .flow{grid-template-columns:repeat(2,1fr)}
+  .flow > div:nth-child(2){border-right:none}
+  .flow > div:nth-child(n+3){border-top:1px solid var(--line)}
+  .flow > div::after{display:none}
+  .targets{grid-template-columns:repeat(2,1fr)}
+  .targets > div:nth-child(2){border-right:none}
+  .targets > div:nth-child(n+3){border-top:1px solid var(--line)}
+}
+@media (max-width:860px){
+  .viewport{padding:16px 14px 90px}
+  .topbar{padding:0 14px}
+  .crumb{display:none}
+  .topbar::before{content:"AI运营组工作台";font-size:13px;font-weight:500;color:var(--ink)}
+  .seg{overflow-x:auto;max-width:100%;scrollbar-width:none}
+  .seg::-webkit-scrollbar{display:none}
+  .seg button{flex:0 0 auto}
+  svg.chart{min-width:600px}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .kpi{border-right:none!important;border-bottom:1px solid var(--line)}
+  .arow{grid-template-columns:auto 1fr;gap:5px 10px;padding:12px 14px;align-items:center}
+  .arow > div:nth-child(3),
+  .arow > div:nth-child(4),
+  .arow > div:nth-child(5){grid-column:1/-1}
+  .arow .due{text-align:left;margin-top:2px}
+  .arow .act{text-align:left}
+  .stamp{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="rail-mask" id="railMask"></div>
+
+  <aside class="rail" id="rail" aria-label="主导航">
+    <div class="rail-inner" id="railInner">
+      <div class="nav-glide" id="navGlide" aria-hidden="true"></div>
+
+      <div class="r-brand">
+        <span class="r-logo" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1.8 10.6l2.5-3.8 2.4 2.3 2.4-5.2 2.2 3.5 2.9-2.2"/>
+          </svg>
+        </span>
+        <span class="r-brand-t"><b>AI运营组工作台</b><i>AI OPS WORKBENCH</i></span>
+      </div>
+
+      <nav class="nav" id="nav"></nav>
+
+      <div class="r-user">
+        <span class="r-av" id="uAv">·</span>
+        <span class="r-user-t"><b id="uName">组内成员</b><i id="uRole">云端同步中</i></span>
+        <button class="r-out" id="uOut" type="button" title="修改我的名字" aria-label="修改我的名字">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 2.6l3.5 3.5M2.4 13.6l1.1-3.4 7-7a1.5 1.5 0 0 1 2.1 0l.2.2a1.5 1.5 0 0 1 0 2.1l-7 7-3.4 1.1z"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="rail-burger" id="railBurger" aria-label="打开导航" aria-controls="rail" aria-expanded="false">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/></svg>
+      </button>
+      <div class="crumb" id="crumb"></div>
+      <div class="top-right">
+        <div class="stamp">数据截至 <b>09:00</b></div>
+        <button class="icon-btn" id="theme" title="切换主题" aria-label="切换主题">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+            <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.2 3.2l1.4 1.4M11.4 11.4l1.4 1.4M12.8 3.2l-1.4 1.4M4.6 11.4l-1.4 1.4"/>
+            <circle cx="8" cy="8" r="3"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+    <div class="viewport" id="viewport"></div>
+  </div>
+</div>
+<script>
+(function(){
+"use strict";
+
+/* ---------- helpers ---------- */
+const $ = (s,r)=> (r||document).querySelector(s);
+const el = (tag, cls, html)=>{ const n=document.createElement(tag); if(cls)n.className=cls; if(html!=null)n.innerHTML=html; return n; };
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pct = v => (v*100).toFixed(1);
+
+/* ---------- data (来自工作台文档，全部为示例数据) ---------- */
+const DATA = {
+  kpis: [
+    {v:'4',  l:'待处理预警', k:'alert'},
+    {v:'4',  l:'异常店铺',   k:'warn'},
+    {v:'23', l:'重点店铺'},
+    {v:'1,056', l:'知识记录'},
+    {v:'6',  l:'待办任务'},
+    {v:'3',  l:'生效规则'},
+    {v:'0',  l:'接口异常',   k:'good'}
+  ],
+  alerts: [
+    {p:'P0', type:'预警 · 指标异常', t:'ZEAMO 京东自营', d:'采纳率 50%，连续 3 周下滑（目标 55%）', due:'逾期 · 今天', late:true, act:'一键处理'},
+    {p:'P0', type:'预警 · 待审积压', t:'PANAPOPO 医疗器械旗舰店', d:'12 个在售 SKU 待审核，最长积压 5 天', due:'逾期 · 今天', late:true, act:'去审核'},
+    {p:'P1', type:'前置校验异常', t:'前置机校验超时', d:'思思账号（天猫）远程码待收集', due:'逾期 · 今天', late:true, act:'去登记'},
+    {p:'P1', type:'预警 · 配置报错', t:'话术模板变量未解析', d:'4 个模板命中，影响 7 家店', due:'逾期 · 今天', late:true, act:'去修复'},
+    {p:'P2', type:'分组绑定', t:'膝部固定器（AY-护膝艾草绑带款 / 长款）', d:'待归入既有组', due:'本周内', late:false, act:'去复核'},
+    {p:'P2', type:'配置变更', t:'风控规则「重复回复拦截」阈值由 2 次改为 3 次', d:'待复核', due:'本周内', late:false, act:'去复核'}
+  ],
+  insight: {
+    head:'采纳率下滑卡在价格类应答，不是流量问题 —— 建议今天优先修订 ZEAMO 价格话术',
+    ev:'近 14 天对话抽样，价格类问题 <b>312</b> 条，采纳率 <b>42%</b>，低于整体 <b>61%</b>；同时段咨询量与响应时长均无异常，排除流量与人力因素。',
+    dlg:[
+      {q:'这个比隔壁贵 20 块，能便宜点吗', a:'我们的价格已经很实惠了，品质有保障', note:'未回应比价点，未给对比锚点', adopted:false, score:0},
+      {q:'包邮吗，能不能便宜', a:'目前是包邮的哦，价格方面可以关注活动', note:'未给出具体优惠动作', adopted:false, score:1},
+      {q:'别人家送护腕，你们送吗', a:'我们可以赠送护腕，另外再给您 5 元优惠券', note:'命中比价场景，给出组合权益', adopted:true, score:4}
+    ]
+  },
+  /* 14 天序列 · 10-29 → 11-11 */
+  days:['10-29','10-30','10-31','11-01','11-02','11-03','11-04','11-05','11-06','11-07','11-08','11-09','11-10','11-11'],
+  adopt:[58.2,58.9,59.4,59.0,59.6,60.1,59.8,60.4,60.9,61.3,60.8,60.2,59.7,60.6],
+  gen:  [73.4,73.9,74.5,74.1,74.8,75.2,74.9,75.4,75.8,76.1,75.6,75.1,74.7,75.3],
+  six: [
+    {k:'采纳率',  w:'61.2%', p:'59.8%', d:'+1.4 pt', dir:'up',   st:'达标', note:'目标 60%，已达成'},
+    {k:'生成率',  w:'74.2%', p:'72.6%', d:'+1.6 pt', dir:'up',   st:'接近', note:'目标 75%，差 0.8 pt'},
+    {k:'转化率',  w:'38.4%', p:'39.1%', d:'-0.7 pt', dir:'down', st:'下滑', note:'唯一负项，集中在价格场景'},
+    {k:'风控率',  w:'2.1%',  p:'1.8%',  d:'+0.3 pt', dir:'down', st:'关注', note:'拦截升高，需确认是否误拦'},
+    {k:'纯智占比', w:'86.4%', p:'85.2%', d:'+1.2 pt', dir:'up',   st:'达标', note:'人工介入下降，效率提升'},
+    {k:'回复率',  w:'98.2%', p:'97.9%', d:'+0.3 pt', dir:'up',   st:'达标', note:'首次响应中位 8.4 秒'}
+  ],
+  drill: [
+    {id:'zeamo', name:'ZEAMO 京东自营', plat:'京东', owner:'远山', tag:'重点',
+     m:[['50.0%','采纳率','bad'],['68.4%','生成率',''],['31.2%','转化率',''],['42','在售 SKU','']],
+     loss:[['价格 / 比价','比价异议未给对比锚点','42%','-18 pt'],
+           ['包邮门槛','与商品页口径不一致','51%','-9 pt'],
+           ['赠品组合','未主动提赠品','55%','-5 pt']],
+     weeks:'52.4% → 51.1% → 50.0%'},
+    {id:'panapopo', name:'PANAPOPO 医疗器械旗舰店', plat:'拼多多', owner:'张欣', tag:'重点',
+     m:[['63.8%','采纳率',''],['—','生成率',''],['—','转化率',''],['12','待审 SKU','bad']],
+     loss:null, weeks:'—'},
+    {id:'songxun', name:'松迅医疗器械专营店', plat:'拼多多', owner:'远山', tag:'重点',
+     m:[['64.1%','采纳率',''],['—','生成率',''],['—','转化率',''],['94%','知识覆盖','']],
+     loss:null, weeks:'—'},
+    {id:'xiangjia', name:'祥佳健康企业店', plat:'天猫', owner:'思思', tag:'重点',
+     m:[['57.2%','采纳率','warn'],['—','生成率',''],['—','转化率',''],['超时','前置机','bad']],
+     loss:null, weeks:'—'},
+    {id:'hengyuan', name:'恒源祥家纺旗舰店', plat:'京东', owner:'王涛', tag:'常规',
+     m:[['66.4%','采纳率',''],['—','生成率',''],['—','转化率',''],['正常','状态','']],
+     loss:null, weeks:'—'}
+  ],
+  stores: [
+    {n:'ZEAMO 京东自营', plat:'京东', owner:'远山', tag:'重点', rate:'50.0', st:'连续下滑', cls:'bad', bar:50},
+    {n:'PANAPOPO 医疗器械旗舰店', plat:'拼多多', owner:'张欣', tag:'重点', rate:'63.8', st:'待审 12', cls:'warn', bar:64},
+    {n:'松迅医疗器械专营店', plat:'拼多多', owner:'远山', tag:'重点', rate:'64.1', st:'知识 94%', cls:'', bar:64},
+    {n:'祥佳健康企业店', plat:'天猫', owner:'思思', tag:'重点', rate:'57.2', st:'校验超时', cls:'warn', bar:57},
+    {n:'恒源祥家纺旗舰店', plat:'京东', owner:'王涛', tag:'常规', rate:'66.4', st:'正常', cls:'', bar:66},
+    {n:'居家官方旗舰店', plat:'天猫', owner:'张欣', tag:'重点', rate:'62.7', st:'正常', cls:'', bar:63},
+    {n:'众创医疗器械专营店', plat:'抖音', owner:'王涛', tag:'重点', rate:'52.9', st:'接口中断', cls:'bad', bar:53},
+    {n:'moffe 筑越旗舰店', plat:'拼多多', owner:'思思', tag:'常规', rate:'55.6', st:'待审 3', cls:'warn', bar:56},
+    {n:'精进器械保健专营店', plat:'天猫', owner:'张欣', tag:'重点', rate:'59.3', st:'正常', cls:'', bar:59}
+  ],
+  accounts: [
+    ['松迅医疗器械专营店','拼多多','songxun_01','已绑定','正常','今日 08:41'],
+    ['PANAPOPO 医疗器械旗舰店','拼多多','panapopo_02','已绑定','正常','今日 08:40'],
+    ['祥佳健康企业店','天猫','xiangjia_tm','缺失','超时','昨日 21:15'],
+    ['ZEAMO 京东自营','京东','zeamo_jd','已绑定','正常','今日 08:39'],
+    ['众创医疗器械专营店','抖音','zhongchuang_dy','已绑定','中断','昨日 16:02'],
+    ['恒源祥家纺旗舰店','京东','hengyuanx_jd','已绑定','正常','今日 08:38']
+  ],
+  owners: [
+    {n:'王涛', s:'王', c:'23', k:'8', r:'61.4', t:'3'},
+    {n:'远山', s:'远', c:'18', k:'6', r:'58.9', t:'2'},
+    {n:'张欣', s:'张', c:'12', k:'5', r:'63.2', t:'1'},
+    {n:'思思', s:'思', c:'11', k:'4', r:'60.1', t:'0'}
+  ],
+  flow: [
+    {i:'01', n:'采集', d:'抓取售前咨询与商品资料，按店铺归集到知识条目'},
+    {i:'02', n:'生成', d:'按类目调用话术模板与知识切片，产出候选话术'},
+    {i:'03', n:'复核', d:'风控拦截 + 人工抽检，口径冲突在此暴露'},
+    {i:'04', n:'采纳', d:'运营采纳后回流为训练样本，进入下一轮生成'}
+  ],
+  versions: [
+    ['v18','11-11 09:12','王涛','价格类模板加入比价锚点','7 家店','当前','ok'],
+    ['v17','11-10 17:41','运营二组','重复回复拦截阈值 2 → 3','全组','待复核','p1'],
+    ['v16','11-09 11:03','张欣','医疗器械类目禁用词表更新','12 家店','已生效','ok'],
+    ['v15','11-07 15:26','思思','新增「护膝绑带」组知识切片 42 条','5 家店','已生效','ok'],
+    ['v14','11-06 10:08','远山','调整生成温度 0.7 → 0.55','全组','已归档','mute']
+  ],
+  skills: [
+    ['售前话术生成','按商品与场景产出候选话术','842','62.1%','运行中'],
+    ['比价异议应答','价格类场景专用，带比价锚点','216','42.0%','待优化'],
+    ['商品知识检索','按 SKU 召回知识切片','128','—','运行中'],
+    ['售后安抚','物流延迟、破损场景回复','64','58.3%','运行中'],
+    ['违规词自检','医疗器械类目发话前校验','34','—','运行中']
+  ],
+  tasks: {
+    todo:[
+      {t:'修订 ZEAMO 价格话术模板', p:'P0', who:'王涛', when:'今日 18:00', late:true},
+      {t:'审核 PANAPOPO 12 个在售 SKU', p:'P0', who:'张欣', when:'今日 18:00', late:true},
+      {t:'补 OMS 远程码（祥佳）', p:'P1', who:'思思', when:'今日 20:00', late:false},
+      {t:'修复 4 个模板的变量未解析', p:'P1', who:'远山', when:'今日 20:00', late:false},
+      {t:'膝部固定器归入既有组', p:'P2', who:'王涛', when:'本周内', late:false},
+      {t:'复核「重复回复拦截」阈值 2 → 3', p:'P2', who:'运营二组', when:'本周内', late:false}
+    ],
+    doing:[
+      {t:'医疗器械禁用词表增量更新', p:'P1', who:'张欣', when:'已进行 2 天', late:false},
+      {t:'松迅知识覆盖率 94% → 98%', p:'P2', who:'远山', when:'本周内', late:false},
+      {t:'PANAPOPO 压缩袜组归类复核', p:'P2', who:'张欣', when:'本周内', late:false}
+    ],
+    done:[
+      {t:'PANAPOPO 静脉曲张压缩袜组绑定', p:'', who:'王涛', when:'10:24', late:false},
+      {t:'众创店铺接口重连', p:'', who:'远山', when:'09:51', late:false},
+      {t:'护膝绑带组知识切片补充 42 条', p:'', who:'思思', when:'09:18', late:false}
+    ]
+  },
+  changes: [
+    ['11-11 09:12','价格类模板加入比价锚点','话术','7 家店 / 216 条候选','王涛','已生效','ok'],
+    ['11-10 17:41','重复回复拦截阈值 2 → 3','风控','全组 92 店','运营二组','待复核','p1'],
+    ['11-09 11:03','医疗器械禁用词表更新','风控','12 家店','张欣','已生效','ok'],
+    ['11-08 14:37','生成温度 0.7 → 0.55','模型','全组','远山','已回滚','mute'],
+    ['11-07 15:26','新增护膝绑带组知识切片 42 条','知识','5 家店','思思','已生效','ok']
+  ],
+  rules: [
+    ['医疗器械禁用词','承诺疗效、绝对化用语','38','直接拦截，需人工改写','生效中','ok'],
+    ['重复回复拦截','24h 内同店同问重复','21','替换为差异化话术','阈值待复核','p1'],
+    ['价格承诺校验','出现未授权折扣承诺','9','拦截并提示查价','生效中','ok']
+  ],
+  conflicts: [
+    ['发货时效','知识库写 48h，商品页写 72h','6 家','未裁决','p0'],
+    ['包邮门槛','满 99 包邮 vs 全场包邮','3 家','待确认','p1'],
+    ['赠品口径','护腕赠品是否随单默认送','2 家','待确认','p1']
+  ],
+  perms: [
+    ['运营','本人负责店铺','话术、知识条目','—'],
+    ['组长','全组 92 店','阈值、模板','影响 ≥10 店需审批'],
+    ['管理员','全部 + 配置','权限、数据绑定','—']
+  ],
+  bindings: [
+    ['重点 23 店','店加权 · 北极星','探域 OMS','每 10 分钟','正常','ok'],
+    ['医疗类目组','店加权 · 含风控率','探域 OMS','每小时','正常','ok'],
+    ['长尾 69 店','简单均值','探域 OMS','每日 02:00','1 店中断','p1']
+  ],
+  models: [
+    ['主力生成模型','售前话术生成（占 78%）','主通道','1,002','1.6s','正常','ok'],
+    ['长文本模型','商品资料摘要、知识切片','主通道','248','3.4s','正常','ok'],
+    ['轻量校验模型','禁用词、口径自检','本地','34','0.3s','正常','ok']
+  ],
+  apiConf: [
+    ['API Key','已配置 · 有效期至 2026-12-31','有效'],
+    ['回调地址','/api/callback/generate','已连通'],
+    ['超时 / 重试','30s · 最多重试 2 次','正常'],
+    ['失败告警','连续 3 次失败推送钉钉群','已开启']
+  ]
+};
+
+/* ---------- short renderers ---------- */
+const chip = (txt, cls)=>`<span class="chip ${cls}">${esc(txt)}</span>`;
+const priChip = p => chip(p, p==='P0'?'p0':p==='P1'?'p1':'p2');
+
+function table(cols, rows, opts){
+  opts = opts||{};
+  const head = cols.map(c=>`<th class="${c.n?'n':''}">${esc(c.t)}</th>`).join('');
+  const body = rows.map(r=>`<tr>${r.map((c,i)=>{
+    const col = cols[i]||{};
+    if(c && typeof c==='object' && c.html!=null) return `<td class="${col.n?'n':''} ${col.cls||''}">${c.html}</td>`;
+    return `<td class="${col.n?'n':''} ${col.cls||''}">${esc(c==null?'—':c)}</td>`;
+  }).join('')}</tr>`).join('');
+  return `<div class="tbl-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
+/* ---------- nav / router ---------- */
+const VIEWS = [
+  {id:'signal', ix:'01', name:'今日信号带', short:'信号', tag:'6'},
+  {id:'board',  ix:'02', name:'数据看板',  short:'看板'},
+  {id:'stores', ix:'03', name:'店铺库',    short:'店铺', tag:'92'},
+  {id:'tasks',  ix:'04', name:'协同与任务', short:'任务'},
+  {id:'qc',     ix:'05', name:'质检风控',   short:'风控'},
+  {id:'api',    ix:'06', name:'AI 接口',    short:'接口'}
+];
+const SUB = {
+  signal:'待处理 6 项 · 逾期 4 项',
+  board:'近 14 天 · 全组 92 店 · 店加权',
+  stores:'92 家店 · 23 家重点 · 4 个平台',
+  tasks:'待办 6 · 进行中 3 · 已完成 7',
+  qc:'3 条规则生效 · 待复核 12 条',
+  api:'3 个模型在跑 · 今日 1,284 次调用'
+};
+
+const navEl = $('#nav'), viewEl = $('#viewport'), crumbEl = $('#crumb');
+let current = 'signal';
+
+navEl.innerHTML = VIEWS.map(v=>
+  `<button data-go="${v.id}"><span class="ix">${v.ix}</span><b class="full">${v.name}</b><b class="short">${v.short}</b>${v.tag?`<span class="tag">${v.tag}</span>`:''}</button>`
+).join('');
+
+function go(id, keepScroll){
+  current = id;
+  navEl.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.go===id));
+  const v = VIEWS.find(x=>x.id===id);
+  crumbEl.innerHTML = `工作台 <i>/</i> <b>${v.name}</b> <i>/</i> ${esc(SUB[id])}`;
+  render(id);
+  if(!keepScroll) viewEl.scrollTop = 0;
+}
+navEl.addEventListener('click', e=>{
+  const b = e.target.closest('button[data-go]');
+  if(b) go(b.dataset.go);
+});
+
+/* ---------- view: signal ---------- */
+function viewSignal(){
+  const D = DATA;
+  const kpis = D.kpis.map(k=>`
+    <div class="kpi ${k.k||''}">
+      <div class="v">${k.v}</div>
+      <div class="l">${k.l}</div>
+    </div>`).join('');
+
+  const alerts = D.alerts.map((a,i)=>`
+    <div class="arow">
+      <div>${priChip(a.p)}</div>
+      <div class="dim" style="font-size:11.5px;color:var(--ink3)">${esc(a.type)}</div>
+      <div>
+        <div class="t">${esc(a.t)}</div>
+        <div class="d">${esc(a.d)}</div>
+      </div>
+      <div class="due ${a.late?'late':''}">${esc(a.due)}</div>
+      <div class="act"><button class="btn sm" data-alert="${i}">${esc(a.act)}</button></div>
+    </div>`).join('');
+
+  const dlg = D.insight.dlg.map(d=>`
+    <div class="dlg">
+      <div>
+        <div class="q">${esc(d.q)}</div>
+        <div class="r">AI 回复：${esc(d.a)} —— <i>${esc(d.note)}</i></div>
+      </div>
+      <div class="sc ${d.adopted?'good':'bad'}">
+        <b>${d.adopted?'已采纳':'不采纳'}</b>${d.score} 分
+      </div>
+    </div>`).join('');
+
+  return `
+  <div class="sec-head">
+    <h2>今日信号带</h2>
+    <span class="sub">2026-11-11 周三 · 数据截至 09:00 · 示例数据</span>
+  </div>
+
+  <div class="kpis">${kpis}</div>
+
+  <div class="sec-head" style="margin-top:24px">
+    <h2 style="font-size:13px;font-weight:500">今日要处理 6 项</h2>
+    <span class="sub">其中逾期 4 项</span>
+  </div>
+  <div class="alist">${alerts}</div>
+
+  <div class="block-title" style="margin-top:26px">今日洞察</div>
+  <div class="insight">
+    <h3><em>INSIGHT</em><span>${esc(D.insight.head)}</span></h3>
+    <div class="ev">依据：${D.insight.ev}</div>
+    <div class="insight-acts">
+      <button class="btn primary" id="toggleDlg">查看扣分对话 <span style="font-family:var(--mono)">▾</span></button>
+      <button class="btn ghost">转给运营复核</button>
+    </div>
+    <div class="dialogues" id="dlgs">${dlg}</div>
+  </div>`;
+}
+
+/* ---------- view: board (chart) ---------- */
+const CHART = {w:760, h:242, pl:38, pr:58, pt:18, pb:30, yMin:50, yMax:78};
+function buildChart(){
+  const C = CHART, D = DATA;
+  const iw = C.w - C.pl - C.pr, ih = C.h - C.pt - C.pb;
+  const x = i => C.pl + (iw/(D.days.length-1))*i;
+  const y = v => C.pt + ih - ((v - C.yMin)/(C.yMax-C.yMin))*ih;
+
+  const path = arr => arr.map((v,i)=>`${i?'L':'M'}${x(i).toFixed(2)},${y(v).toFixed(2)}`).join(' ');
+
+  let gl = '';
+  for(let v=C.yMin; v<=C.yMax; v+=4){
+    gl += `<line class="gl${v===C.yMin?' zero':''}" x1="${C.pl}" y1="${y(v)}" x2="${C.w-C.pr}" y2="${y(v)}"/>
+      <text x="${C.pl-8}" y="${y(v)+3.5}" text-anchor="end">${v}</text>`;
+  }
+  // x labels every other (avoid last-two collision)
+  let xl = '';
+  D.days.forEach((d,i)=>{ if(i%2===0){
+    xl += `<text x="${x(i)}" y="${C.h-8}" text-anchor="middle">${d}</text>`;
+  }});
+
+  const hot = [10,11,12].map(i=>
+    `<rect x="${x(i)-5}" y="${C.pt}" width="10" height="${ih}" fill="var(--bad)" opacity="0.05"/>`).join('');
+
+  const dots = (arr,color)=>arr.map((v,i)=>`<circle class="dot" cx="${x(i)}" cy="${y(v)}" r="2.2" fill="${color}"/>`).join('');
+
+  const hover = D.days.map((d,i)=>`<rect class="hv" data-i="${i}" x="${x(i)-(iw/(D.days.length-1))/2}" y="${C.pt}" width="${iw/(D.days.length-1)}" height="${ih}" fill="transparent"/>`).join('');
+
+  return `<svg class="chart" viewBox="0 0 ${C.w} ${C.h}" role="img" aria-label="采纳率与生成率近 14 天走势">
+    <g class="axis">${gl}${xl}</g>
+    ${hot}
+    <line class="target" x1="${C.pl}" y1="${y(60)}" x2="${C.w-C.pr}" y2="${y(60)}"/>
+    <line class="target" x1="${C.pl}" y1="${y(75)}" x2="${C.w-C.pr}" y2="${y(75)}"/>
+    <path class="line-b" d="${path(D.gen)}"/>
+    <path class="line-a" d="${path(D.adopt)}"/>
+    ${dots(D.gen,'var(--info)')}
+    ${dots(D.adopt,'var(--amber)')}
+    <text class="endlabel" x="${C.w-C.pr+6}" y="${y(D.adopt[D.adopt.length-1])-6}" fill="var(--amber)">${D.adopt[D.adopt.length-1]}%</text>
+    <text class="endlabel" x="${C.w-C.pr+6}" y="${y(D.gen[D.gen.length-1])+12}" fill="var(--info)">${D.gen[D.gen.length-1]}%</text>
+    <line id="cross" x1="0" y1="${C.pt}" x2="0" y2="${C.pt+ih}" stroke="var(--ink3)" stroke-width="1" stroke-dasharray="2 3" opacity="0" />
+    <g id="hits">${hover}</g>
+  </svg>`;
+}
+
+function viewBoard(){
+  const D = DATA;
+  const six = table(
+    [{t:'指标'},{t:'本周',n:1},{t:'上周',n:1},{t:'环比',n:1},{t:'状态'},{t:'说明'}],
+    D.six.map(r=>[r.k, r.w, r.p, {html:`<span class="delta ${r.dir}">${r.d}</span>`},
+      {html:chip(r.st, r.st==='达标'?'ok':r.st==='下滑'?'p0':'p1')}, {html:`<span style="color:var(--ink2)">${esc(r.note)}</span>`}])
+  );
+
+  return `
+  <div class="sec-head">
+    <h2>数据看板</h2>
+    <span class="sub">近 14 天 · 全组 92 店 · 口径：北极星指标（店加权）· 示例数据</span>
+  </div>
+
+  <div class="card pad">
+    <div class="chart-head">
+      <div>
+        <div style="font-size:13px;font-weight:500">采纳率 / 生成率 · 近 14 天</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:2px">虚线为各自目标值 · 红底为三连降区间</div>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--amber)"></i>采纳率</span>
+        <span><i style="background:var(--info)"></i>生成率</span>
+        <span><i class="dash"></i>目标 60 / 75</span>
+      </div>
+    </div>
+    <div class="chart-wrap" id="chartWrap">
+      ${buildChart()}
+      <div class="tip" id="tip"></div>
+    </div>
+    <div class="readout">
+      采纳率 14 天从 <b>58.2%</b> 走到 <b>60.6%</b>，整体上行，但 <span class="em">11-08 → 11-10 三连降</span>；
+      同期生成率稳定在 <b>73–76%</b>，说明问题不在产能，而在<b>采纳环节</b>。两条线在 11-09 出现明显背离，是这次排查的起点。
+    </div>
+  </div>
+
+  <div class="block-title" style="margin-top:26px">六项核心指标 · 本周 vs 上周</div>
+  ${six}
+  <div class="note">口径：本周 = 11-05 至 11-11，上周 = 10-29 至 11-04；均为店加权均值，不含已下架店铺。</div>
+
+  <div class="block-title" style="margin-top:26px">单店下钻</div>
+  <div class="toolbar" id="drillTabs">
+    <div class="seg">
+      ${D.drill.map((d,i)=>`<button data-drill="${i}" class="${i===0?'on':''}">${esc(d.name)}</button>`).join('')}
+    </div>
+  </div>
+  <div id="drillBody"></div>`;
+}
+
+function renderDrill(i){
+  const d = DATA.drill[i];
+  const m = d.m.map(([v,l,k])=>`
+    <div><div class="v" style="${k==='bad'?'color:var(--bad)':k==='warn'?'color:var(--warn)':''}">${v}</div><div class="l">${l}</div></div>`).join('');
+
+  const loss = d.loss
+    ? table([{t:'类目'},{t:'失分点'},{t:'该类采纳率',n:1},{t:'对全组影响',n:1}],
+        d.loss.map(r=>[r[0],{html:`<span style="color:var(--ink2)">${esc(r[1])}</span>`},r[2],{html:`<span class="delta down">${r[3]}</span>`}]))
+    : `<div class="empty" style="padding:26px">该店类目失分未采集 · 接入「比价异议应答」后可见</div>`;
+
+  $('#drillBody').innerHTML = `
+    <div class="mini-kpis four">${m}</div>
+    <div style="display:flex;align-items:center;gap:10px;margin:14px 0 8px">
+      <div class="block-title" style="margin:0;flex:1">类目失分 · 近 14 天</div>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--ink3)">近三周采纳率：${esc(d.weeks)}</span>
+    </div>
+    ${loss}`;
+}
+
+/* ---------- view: stores ---------- */
+function viewStores(){
+  const D = DATA;
+  const acc = table([{t:'店铺'},{t:'平台'},{t:'登录账号'},{t:'OMS 远程码'},{t:'前置机'},{t:'最近同步',n:1}],
+    D.accounts.map(r=>[r[0],{html:`<span style="color:var(--ink2)">${r[1]}</span>`},
+      {html:`<span style="font-family:var(--mono);font-size:11.5px">${esc(r[2])}</span>`},
+      r[3]==='缺失'?{html:chip('缺失','p0')}:r[3],
+      r[4]==='正常'?{html:chip('正常','ok')}:{html:chip(r[4],'p1')},
+      {html:`<span style="font-family:var(--mono);font-size:11.5px">${esc(r[5])}</span>`}]));
+
+  const owners = D.owners.map(o=>`
+    <div class="owner">
+      <div class="hd">
+        <div class="av">${o.s}</div>
+        <div><div class="nm">${o.n}</div><div class="rl">负责店铺</div></div>
+      </div>
+      <div class="row2">
+        <div><span>${o.c}</span><em>家店</em></div>
+        <div><span>${o.k}</span><em>重点</em></div>
+        <div><span>${o.r}<small style="font-size:10px">%</small></span><em>采纳率</em></div>
+        <div><span>${o.t}</span><em>待办</em></div>
+      </div>
+    </div>`).join('');
+
+  const flow = D.flow.map(f=>`<div><div class="st">${f.i}</div><div class="nm">${f.n}</div><div class="ds">${f.d}</div></div>`).join('');
+
+  const ver = table([{t:'版本'},{t:'时间'},{t:'操作人'},{t:'变更摘要'},{t:'影响'},{t:'状态'}],
+    D.versions.map(r=>[{html:`<span style="font-family:var(--mono)">${r[0]}</span>`},
+      {html:`<span style="font-family:var(--mono);font-size:11.5px;color:var(--ink3)">${r[1]}</span>`},
+      r[2],{html:`<span style="color:var(--ink2)">${esc(r[3])}</span>`},
+      {html:`<span style="font-family:var(--mono);font-size:11.5px">${esc(r[4])}</span>`},
+      {html:chip(r[5], r[6]==='ok'?'ok':r[6]==='p1'?'p1':'mute')}]));
+
+  const skills = table([{t:'技能'},{t:'用途'},{t:'日调用',n:1},{t:'采纳率',n:1},{t:'状态'}],
+    D.skills.map(r=>[{html:`<span style="font-weight:500">${esc(r[0])}</span>`},
+      {html:`<span style="color:var(--ink2)">${esc(r[1])}</span>`},
+      r[2],r[3],{html:r[4]==='待优化'?chip('待优化','p1'):chip('运行中','ok')}]));
+
+  return `
+  <div class="sec-head">
+    <h2>店铺库</h2>
+    <span class="sub">92 家店 · 23 家重点 · 4 个平台 · 示例数据</span>
+  </div>
+
+  <div class="toolbar">
+    <div class="seg" id="storeTabs">
+      <button data-f="all" class="on">全部<b>92</b></button>
+      <button data-f="key">重点<b>23</b></button>
+      <button data-f="bad">异常<b>4</b></button>
+      <button data-f="audit">待审核<b>7</b></button>
+    </div>
+    <label class="search">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+        <circle cx="7" cy="7" r="4.6"/><path d="M10.6 10.6L14 14"/>
+      </svg>
+      <input id="storeSearch" placeholder="搜索店铺 / 负责人 / 平台" />
+    </label>
+    <select id="platSel">
+      <option value="">全部平台</option>
+      <option>京东</option><option>拼多多</option><option>天猫</option><option>抖音</option>
+    </select>
+    <div style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink3)" id="storeCount"></div>
+  </div>
+  <div class="grid-stores" id="storeGrid"></div>
+  <div class="note">卡片数据为文档示例，当前仅收录 9 家；92 家全量需接入探域 OMS 店铺列表后展开。</div>
+
+  <div class="block-title" style="margin-top:26px">账号资料 · 92 条 · 7 条待补远程码</div>
+  ${acc}
+
+  <div class="block-title" style="margin-top:26px">店铺负责人 · 按人聚合 · 4 位在管</div>
+  <div class="owners">${owners}</div>
+
+  <div class="block-title" style="margin-top:26px">资产库 · 配置 18 版 / 流程 4 段 / 技能 7 个</div>
+  <div class="flow" style="margin-bottom:16px">${flow}</div>
+
+  <div class="split c2">
+    <div>
+      <div class="block-title">配置存档 · 可回滚至任意历史版本</div>
+      ${ver}
+    </div>
+    <div>
+      <div class="block-title">AI 技能库 · 今日 1,284 次调用</div>
+      ${skills}
+      <div class="note">「比价异议应答」是当前唯一低于目标的技能，与首页 P0 的 ZEAMO 采纳率下滑同源。</div>
+    </div>
+  </div>`;
+}
+
+function renderStoreGrid(){
+  const f = $('#storeTabs').querySelector('.on').dataset.f;
+  const q = ($('#storeSearch').value||'').trim().toLowerCase();
+  const p = $('#platSel').value;
+
+  let list = DATA.stores.slice();
+  if(f==='key') list = list.filter(s=>s.tag==='重点');
+  if(f==='bad') list = list.filter(s=>s.cls==='bad');
+  if(f==='audit') list = list.filter(s=>/待审/.test(s.st));
+  if(p) list = list.filter(s=>s.plat===p);
+  if(q) list = list.filter(s=>(s.n+s.owner+s.plat+s.st).toLowerCase().includes(q));
+
+  const grid = $('#storeGrid');
+  grid.innerHTML = list.length ? list.map(s=>`
+    <div class="scard ${s.cls==='bad'?'hot':s.cls==='warn'?'warn':''}">
+      <div class="nm">${esc(s.n)}</div>
+      <div class="meta">
+        <span>${esc(s.plat)}</span><span style="color:var(--line2)">·</span>
+        <span>${esc(s.owner)}</span>
+        ${chip(s.tag, s.tag==='重点'?'amber':'mute')}
+      </div>
+      <div class="m">
+        <span class="big">${s.rate}</span><span class="u">% 采纳率</span>
+        <span class="st ${s.cls==='bad'?'st-bad':s.cls==='warn'?'st-warn':'st-ok'}">${esc(s.st)}</span>
+      </div>
+      <div class="bar"><i style="width:${s.bar}%"></i></div>
+    </div>`).join('')
+    : `<div class="empty">无匹配店铺<br><span style="font-size:11px">试试清空搜索或切换筛选</span></div>`;
+
+  $('#storeCount').textContent = `显示 ${list.length} / 92 家`;
+}
+
+/* ---------- view: tasks ---------- */
+function viewTasks(){
+  const D = DATA;
+  const card = (t, done)=>`
+    <div class="tcard ${done?'done':''}">
+      <div class="tt">${esc(t.t)}</div>
+      <div class="tf">
+        ${t.p?priChip(t.p):chip('已完成','ok')}
+        <span class="who">${esc(t.who)}</span>
+        <span class="when ${t.late?'late':''}">${esc(t.when)}</span>
+      </div>
+    </div>`;
+
+  const chg = table([{t:'时间'},{t:'变更项'},{t:'类型'},{t:'影响范围'},{t:'操作人'},{t:'状态'}],
+    D.changes.map(r=>[{html:`<span style="font-family:var(--mono);font-size:11.5px;color:var(--ink3)">${r[0]}</span>`},
+      {html:`<span style="font-weight:500">${esc(r[1])}</span>`},
+      {html:`<span style="color:var(--ink2)">${esc(r[2])}</span>`},
+      {html:`<span style="font-family:var(--mono);font-size:11.5px">${esc(r[3])}</span>`},
+      r[4],
+      {html:r[6]==='ok'?chip('已生效','ok'):r[6]==='p1'?chip('待复核','p1'):chip('已回滚','mute')}]));
+
+  return `
+  <div class="sec-head">
+    <h2>协同与任务</h2>
+    <span class="sub">待办 6 · 进行中 3 · 今日已完成 7 · 示例数据</span>
+  </div>
+
+  <div class="kanban">
+    <div class="col">
+      <div class="col-hd"><span class="dot"></span><span class="nm">待办</span><span class="ct">6</span></div>
+      ${D.tasks.todo.map(t=>card(t,false)).join('')}
+    </div>
+    <div class="col doing">
+      <div class="col-hd"><span class="dot"></span><span class="nm">进行中</span><span class="ct">3</span></div>
+      ${D.tasks.doing.map(t=>card(t,false)).join('')}
+    </div>
+    <div class="col done">
+      <div class="col-hd"><span class="dot"></span><span class="nm">已完成</span><span class="ct">7</span></div>
+      ${D.tasks.done.map(t=>card(t,true)).join('')}
+    </div>
+  </div>
+
+  <div class="block-title" style="margin-top:26px">版本变更记录 · 近 7 天 18 条</div>
+  ${chg}
+  <div class="note">所有影响 ≥ 10 家店的变更，需二次复核后才能生效；回滚入口在「资产库 · 配置存档」。</div>`;
+}
+
+/* ---------- view: qc ---------- */
+function viewQc(){
+  const D = DATA;
+  const rules = table([{t:'规则'},{t:'触发场景'},{t:'命中',n:1},{t:'处置'},{t:'状态'}],
+    D.rules.map(r=>[{html:`<span style="font-weight:500">${esc(r[0])}</span>`},
+      {html:`<span style="color:var(--ink2)">${esc(r[1])}</span>`},
+      r[2],{html:`<span style="color:var(--ink2)">${esc(r[3])}</span>`},
+      {html:r[5]==='ok'?chip('生效中','ok'):chip('阈值待复核','p1')}]));
+
+  const conf = table([{t:'冲突项'},{t:'冲突内容'},{t:'涉及店铺',n:1},{t:'状态'}],
+    D.conflicts.map(r=>[{html:`<span style="font-weight:500">${esc(r[0])}</span>`},
+      {html:`<span style="color:var(--ink2)">${esc(r[1])}</span>`},
+      {html:`<span style="font-family:var(--mono)">${esc(r[2])}</span>`},
+      {html:chip(r[3], r[4])}]));
+
+  const perms = table([{t:'角色'},{t:'可见范围'},{t:'可改'},{t:'需审批'}],
+    D.perms.map(r=>[{html:`<span style="font-weight:500">${esc(r[0])}</span>`},
+      {html:`<span style="color:var(--ink2)">${esc(r[1])}</span>`},
+      {html:`<span style="color:var(--ink2)">${esc(r[2])}</span>`},
+      {html:r[3]==='—'?'—':chip(r[3],'p1')}]));
+
+  const bind = table([{t:'店铺组'},{t:'口径'},{t:'数据源'},{t:'同步频率'},{t:'状态'}],
+    D.bindings.map(r=>[{html:`<span style="font-weight:500">${esc(r[0])}</span>`},
+      {html:`<span style="color:var(--ink2)">${esc(r[1])}</span>`},
+      {html:`<span style="font-family:var(--mono);font-size:11.5px">${esc(r[2])}</span>`},
+      {html:`<span style="font-family:var(--mono);font-size:11.5px">${esc(r[3])}</span>`},
+      {html:r[5]==='ok'?chip('正常','ok'):chip(r[4],'p1')}]));
+
+  const targets = [
+    ['采纳率','61.2%','60.0%','达成','ok'],
+    ['生成率','74.2%','75.0%','差 0.8','warn'],
+    ['转化率','38.4%','40.0%','差 1.6','bad'],
+    ['回复率','98.2%','98.0%','达成','ok']
+  ].map(([nm,act,tgt,lab,k])=>`
+    <div>
+      <div class="nm">${nm}</div>
+      <div class="vals"><b style="${k==='ok'?'color:var(--good)':k==='warn'?'color:var(--warn)':'color:var(--bad)'}">${act}</b><s>/ ${tgt}</s></div>
+      <div class="tagline" style="color:var(--ink3)">${lab}</div>
+    </div>`).join('');
+
+  return `
+  <div class="sec-head">
+    <h2>质检风控 · 设置</h2>
+    <span class="sub">3 条规则生效 · 待复核 12 条 · 示例数据</span>
+  </div>
+
+  <div class="block-title">违规拦截 · 近 7 天</div>
+  ${rules}
+
+  <div class="split c2" style="margin-top:22px">
+    <div>
+      <div class="block-title">口径冲突 · 待裁决</div>
+      ${conf}
+      <div class="note">口径冲突不裁决，模型会同时学到两套说法，是采纳率波动的隐性来源之一。</div>
+    </div>
+    <div>
+      <div class="block-title">复核队列</div>
+      <div class="mini-kpis">
+        <div><div class="v" style="color:var(--amber)">12</div><div class="l">待复核条数</div></div>
+        <div><div class="v">2</div><div class="l">最久等待（天）</div></div>
+        <div><div class="v" style="color:var(--good)">94.2<small>%</small></div><div class="l">24h 内处理率</div></div>
+      </div>
+      <button class="btn primary" style="margin-top:10px">去复核 12 条</button>
+    </div>
+  </div>
+
+  <div class="block-title" style="margin-top:26px">目标值</div>
+  <div class="targets">${targets}</div>
+
+  <div class="split c2b" style="margin-top:22px">
+    <div>
+      <div class="block-title">权限</div>
+      ${perms}
+    </div>
+    <div>
+      <div class="block-title">数据绑定</div>
+      ${bind}
+    </div>
+  </div>`;
+}
+
+/* ---------- view: api ---------- */
+function viewApi(){
+  const D = DATA;
+  const models = table([{t:'模型'},{t:'用途'},{t:'通道'},{t:'今日调用',n:1},{t:'P95 延迟',n:1},{t:'状态'}],
+    D.models.map(r=>[{html:`<span style="font-weight:500">${esc(r[0])}</span>`},
+      {html:`<span style="color:var(--ink2)">${esc(r[1])}</span>`},
+      {html:chip(r[2], r[2]==='本地'?'mute':'p2')},
+      r[3],{html:`<span class="num">${esc(r[4])}</span>`},
+      {html:chip(r[5],'ok')}]));
+
+  const conf = table([{t:'项'},{t:'值'},{t:'状态'}],
+    D.apiConf.map(r=>[{html:`<span style="color:var(--ink2)">${esc(r[0])}</span>`},
+      {html:`<span style="font-family:var(--mono);font-size:11.5px">${esc(r[1])}</span>`},
+      {html:chip(r[2],'ok')}]));
+
+  return `
+  <div class="sec-head">
+    <h2>AI 接口</h2>
+    <span class="sub">3 个模型在跑 · 今日 1,284 次调用 · 失败 0 · 示例数据</span>
+  </div>
+
+  <div class="block-title">接入模型 · 按用途分流</div>
+  ${models}
+
+  <div class="split c2" style="margin-top:22px">
+    <div>
+      <div class="block-title">接口健康 · 近 24 小时</div>
+      <div class="mini-kpis">
+        <div><div class="v" style="color:var(--good)">99.2<small>%</small></div><div class="l">成功率</div></div>
+        <div><div class="v">1.9<small>s</small></div><div class="l">平均延迟</div></div>
+        <div><div class="v">0</div><div class="l">限流触发</div></div>
+      </div>
+      <div class="note">1,284 次中失败 10 次，均为超时重试后成功。P95 2.8s，长文本通道最慢 3.4s。当前 QPS 峰值 4.2 / 上限 20。</div>
+    </div>
+    <div>
+      <div class="block-title">接入配置 · 修改需管理员</div>
+      ${conf}
+      <div class="note">模型切换需在「资产库 · 配置存档」留痕，便于回滚。</div>
+    </div>
+  </div>`;
+}
+
+/* ---------- render dispatch ---------- */
+function render(id){
+  const map = {signal:viewSignal, board:viewBoard, stores:viewStores, tasks:viewTasks, qc:viewQc, api:viewApi};
+  viewEl.innerHTML = `<div class="view on">${map[id]()}</div>`;
+  if(id==='signal') bindSignal();
+  if(id==='board'){ bindChart(); bindDrill(); }
+  if(id==='stores'){ bindStores(); }
+}
+
+/* ---------- interactions ---------- */
+function bindSignal(){
+  const t = $('#toggleDlg'), d = $('#dlgs');
+  if(t) t.addEventListener('click', ()=>{
+    const open = d.classList.toggle('open');
+    t.innerHTML = open ? '收起扣分对话 <span style="font-family:var(--mono)">▴</span>'
+                       : '查看扣分对话 <span style="font-family:var(--mono)">▾</span>';
+  });
+  viewEl.querySelectorAll('[data-alert]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const a = DATA.alerts[+b.dataset.alert];
+      b.textContent = '已打开 · ' + a.act.replace(/^去|^一键/,'');
+      b.classList.add('primary');
+      setTimeout(()=>{ b.textContent = a.act; b.classList.remove('primary'); }, 1400);
+    });
+  });
+}
+
+function bindDrill(){
+  const tabs = $('#drillTabs');
+  if(!tabs) return;
+  tabs.addEventListener('click', e=>{
+    const b = e.target.closest('[data-drill]');
+    if(!b) return;
+    tabs.querySelectorAll('[data-drill]').forEach(x=>x.classList.toggle('on', x===b));
+    renderDrill(+b.dataset.drill);
+  });
+  renderDrill(0);
+}
+
+function bindChart(){
+  const wrap = $('#chartWrap');
+  if(!wrap) return;
+  const svg = wrap.querySelector('svg');
+  const tip = $('#tip');
+  const cross = svg.querySelector('#cross');
+  const C = CHART;
+  const iw = C.w - C.pl - C.pr;
+
+  const show = (i, px, py)=>{
+    const iw2 = iw/(DATA.days.length-1);
+    const cx = C.pl + iw2*i;
+    cross.setAttribute('x1', cx); cross.setAttribute('x2', cx); cross.setAttribute('opacity','1');
+    tip.innerHTML = `<div class="hd">${DATA.days[i]}</div>
+      <div class="row"><em>采纳率</em><span style="color:var(--amber)">${DATA.adopt[i]}%</span></div>
+      <div class="row"><em>生成率</em><span style="color:var(--info)">${DATA.gen[i]}%</span></div>`;
+    const rect = svg.getBoundingClientRect();
+    const left = (cx / C.w) * rect.width - wrap.scrollLeft;
+    tip.style.left = Math.min(Math.max(left, 80), rect.width-80) + 'px';
+    // 靠近顶部时翻到光标下方，避免溢出图表
+    const flip = (py != null && py < 74);
+    tip.style.top = (flip ? (py + 14) : (py != null ? py - 12 : rect.height*0.5)) + 'px';
+    tip.style.transform = flip ? 'translate(-50%,0)' : 'translate(-50%,-100%)';
+    tip.classList.add('on');
+  };
+  const hide = ()=>{ cross.setAttribute('opacity','0'); tip.classList.remove('on'); };
+
+  svg.querySelectorAll('.hv').forEach(r=>{
+    const at = e=>{
+      const rect = svg.getBoundingClientRect();
+      show(+r.dataset.i, e.clientX - rect.left, e.clientY - rect.top);
+    };
+    r.addEventListener('mouseenter', at);
+    r.addEventListener('mousemove', at);
+  });
+  svg.addEventListener('mouseleave', hide);
+}
+
+function bindStores(){
+  const tabs = $('#storeTabs'), q = $('#storeSearch'), p = $('#platSel');
+  tabs.addEventListener('click', e=>{
+    const b = e.target.closest('[data-f]'); if(!b) return;
+    tabs.querySelectorAll('[data-f]').forEach(x=>x.classList.toggle('on', x===b));
+    renderStoreGrid();
+  });
+  q.addEventListener('input', renderStoreGrid);
+  p.addEventListener('change', renderStoreGrid);
+  renderStoreGrid();
+}
+
+/* ---------- theme ---------- */
+const themeBtn = $('#theme');
+function setTheme(t){
+  document.documentElement.dataset.theme = t;
+  try{ localStorage.setItem('sb-theme', t); }catch(e){}
+}
+themeBtn.addEventListener('click', ()=>{
+  setTheme(document.documentElement.dataset.theme==='dark' ? 'light' : 'dark');
+});
+try{
+  const saved = localStorage.getItem('sb-theme');
+  if(saved) setTheme(saved);
+}catch(e){}
+
+/* ---------- keyboard ---------- */
+document.addEventListener('keydown', e=>{
+  if(e.target.matches('input,select,textarea')) return;
+  const n = parseInt(e.key,10);
+  if(n>=1 && n<=VIEWS.length) go(VIEWS[n-1].id);
+});
+
+/* ---------- boot ---------- */
+go('signal');
+
+})();
+</script>
+</body>
+</html>

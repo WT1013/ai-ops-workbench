@@ -1,0 +1,113 @@
+/* ============ v3 配色：浅青（取自用户截图 2026-11-11） ============ */
+/* 截图取色：#246B78 主色 / #E5F4F7 底 / #E6F4F6 选中 / #B23A2F 红 / #BE8F1C 琥珀 / #C3DFE5 线 */
+
+html[data-theme="light"]{
+  --bg:#E9F5F8;
+  --panel:#FFFFFF;
+  --panel2:#F5FBFC;
+  --panel3:#E6F4F6;
+  --shell:#F2FAFB;
+  --line:#D8E9ED;
+  --line2:#BEDDE3;
+  --ink:#0A1A20;
+  --ink2:#4A5C64;
+  --ink3:#7A8B92;
+  --amber:#246B78;
+  --amber-soft:#E3F2F5;
+  --good:#17785A;
+  --good-soft:#E3F3EC;
+  --warn:#BE8F1C;
+  --warn-soft:#FCF3D9;
+  --bad:#B23A2F;
+  --bad-soft:#FCF3F2;
+  --info:#2A82BE;
+  --info-soft:#E8F2FB;
+  --grid:#DBE9ED;
+  --accent-panel:#E8F6F8;
+  --accent-line:#C3DFE5;
+  --edge:rgba(36,107,120,.26);
+  --shadow:0 1px 2px rgba(10,26,32,.04), 0 10px 24px -20px rgba(10,26,32,.35);
+}
+
+html[data-theme="dark"]{
+  --bg:#061418;
+  --panel:#0B2027;
+  --panel2:#0F2A32;
+  --panel3:#133841;
+  --shell:#0A1D23;
+  --line:#173138;
+  --line2:#22454E;
+  --ink:#E6F2F4;
+  --ink2:#9CB3B9;
+  --ink3:#6A8188;
+  --amber:#54B6C6;
+  --amber-soft:rgba(84,182,198,.14);
+  --good:#3CC08D;
+  --good-soft:rgba(60,192,141,.13);
+  --warn:#D9A93C;
+  --warn-soft:rgba(217,169,60,.13);
+  --bad:#E06A5C;
+  --bad-soft:rgba(224,106,92,.13);
+  --info:#4A9BD8;
+  --info-soft:rgba(78,158,220,.13);
+  --grid:#1B353D;
+  --accent-panel:rgba(84,182,198,.09);
+  --accent-line:rgba(84,182,198,.28);
+  --edge:rgba(84,182,198,.30);
+  --shadow:0 1px 0 rgba(255,255,255,.03), 0 12px 28px -18px rgba(0,0,0,.85);
+}
+
+html[data-theme="light"] body{
+  background-color:var(--bg);
+  background-image:linear-gradient(165deg,#F0F9FB 0%,#E4F3F7 52%,#DBEFF3 100%);
+  background-attachment:fixed;
+}
+
+/* 浅色主题下把旧的写死 rgba 描边换成新色 */
+html[data-theme="light"] .chip.p0{border-color:rgba(178,58,47,.24)}
+html[data-theme="light"] .chip.p1{border-color:rgba(190,143,28,.26)}
+html[data-theme="light"] .chip.p2{border-color:rgba(42,130,190,.24)}
+html[data-theme="light"] .chip.ok{border-color:rgba(23,120,90,.24)}
+html[data-theme="light"] .btn.danger{border-color:rgba(178,58,47,.35)}
+.rail,.topbar{background:var(--shell)}
+.nav button.on{background:var(--panel3)}
+.chip.amber{border-color:var(--edge)}
+.btn.danger{border-color:var(--edge)}
+.iact.del:hover{border-color:var(--edge)}
+
+/* 预警 KPI：整格不加底色，只让数字着色（对齐参考截图的干净 KPI 条） */
+.kpi.alert{background:transparent;box-shadow:none}
+.kpi.warn{background:transparent;box-shadow:none}
+.kpi.good{background:transparent;box-shadow:none}
+html[data-theme="light"] .kpi.alert .v{color:var(--bad)}
+html[data-theme="light"] .kpi.warn .v{color:#9A7314}
+html[data-theme="light"] .kpi.good .v{color:var(--good)}
+
+/* 洞察块：淡青填充 + 左侧主色条 */
+.insight{
+  background:var(--accent-panel);
+  border-color:var(--accent-line);
+  border-top:1px solid var(--accent-line);
+  border-left:2px solid var(--amber);
+}
+html[data-theme="light"] .insight h3{color:var(--ink)}
+html[data-theme="light"] .arow .t{color:var(--ink)}
+
+/* 主按钮：浅色主题下用白字，深色主题下用深字（主色偏亮） */
+html[data-theme="light"] .btn.primary{color:#fff}
+html[data-theme="light"] .btn.primary:hover{filter:brightness(.94)}
+html[data-theme="dark"] .btn.primary{color:#06232A}
+
+/* 表格/卡片描边换成淡青 */
+html[data-theme="light"] .tbl-wrap table th{background:var(--panel2)}
+html[data-theme="light"] .scard.hot{border-color:var(--edge)}
+
+/* 预警行按优先级左侧色条 + 极淡底色（对齐参考截图） */
+html[data-theme="light"] .arow{box-shadow:inset 3px 0 0 transparent}
+html[data-theme="light"] .arow[data-lv="P0"]{background:var(--bad-soft);box-shadow:inset 3px 0 0 var(--bad)}
+html[data-theme="light"] .arow[data-lv="P1"]{background:var(--warn-soft);box-shadow:inset 3px 0 0 var(--warn)}
+html[data-theme="light"] .arow[data-lv="P2"]{background:var(--panel);box-shadow:inset 3px 0 0 var(--line2)}
+html[data-theme="light"] .arow:hover{filter:brightness(.985)}
+html[data-theme="dark"] .arow[data-lv="P0"]{box-shadow:inset 3px 0 0 var(--bad)}
+html[data-theme="dark"] .arow[data-lv="P1"]{box-shadow:inset 3px 0 0 var(--warn)}
+html[data-theme="dark"] .arow[data-lv="P2"]{box-shadow:inset 3px 0 0 var(--line2)}

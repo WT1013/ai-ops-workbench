@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>AI运营组工作台 · 交接文档</title>
+<style>
+  body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;font-size:11pt;line-height:1.75;color:#1d2b30;}
+  h1{font-size:22pt;margin:0 0 6pt;letter-spacing:.5pt;}
+  h2{font-size:15pt;margin:22pt 0 8pt;padding-bottom:4pt;border-bottom:1px solid #c8d8dc;color:#1b5e6b;}
+  h3{font-size:12.5pt;margin:14pt 0 6pt;color:#246b78;}
+  p{margin:0 0 8pt;}
+  .cover{text-align:center;margin:60pt 0 30pt;}
+  .cover .sub{font-size:12pt;color:#4f6f78;margin-top:10pt;}
+  .cover .meta{font-size:10.5pt;color:#5d7b83;margin-top:26pt;line-height:2.1;}
+  .tag{display:inline-block;padding:1pt 8pt;border:1px solid #9dbcc3;border-radius:8pt;font-size:9.5pt;color:#246b78;}
+  table{border-collapse:collapse;width:100%;margin:8pt 0 12pt;font-size:10pt;}
+  th,td{border:1px solid #b9cdd3;padding:5pt 7pt;vertical-align:top;text-align:left;}
+  th{background:#eaf2f4;font-weight:bold;}
+  code{font-family:Consolas,monospace;font-size:9.5pt;background:#f2f6f7;padding:1pt 3pt;}
+  .note{border-left:3px solid #2a8296;background:#f2f8f9;padding:7pt 10pt;margin:8pt 0 12pt;font-size:10.5pt;}
+  .warn{border-left:3px solid #c0762a;background:#fdf6ec;padding:7pt 10pt;margin:8pt 0 12pt;font-size:10.5pt;}
+  ul,ol{margin:0 0 10pt 18pt;padding:0;}
+  li{margin-bottom:4pt;}
+  .toc li{margin-bottom:3pt;}
+  .small{font-size:9.5pt;color:#5d7b83;}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="tag">交接文档</div>
+  <h1 style="margin-top:16pt;">AI运营组工作台</h1>
+  <div class="sub">多店铺运营工作台 · 云端共享版 v4.2</div>
+  <div class="meta">
+    交接人：王涛<br>
+    交接日期：2026 年 11 月 12 日<br>
+    接收范围：工作台日常维护、数据运营、后续功能推进
+  </div>
+</div>
+
+<h2>0. 三十秒上手</h2>
+<p>这份文档写给接手的人。你只需要先记住三件事：</p>
+<ol>
+  <li><b>入口</b>：<code>https://ai-ops-workbench-43332.app.workbuddy.host/?sharecode=L6I6SZYJ54</code></li>
+  <li><b>登录</b>：点「使用 WorkBuddy 登录」，或用邮箱验证码。登录后看到的就是团队共享的那一份数据，不是本机缓存。</li>
+  <li><b>改数据</b>：任何页面里的新增 / 编辑 / 删除，约 0.3 秒后自动写到云端，全组同步可见，不需要点保存按钮之外的额外操作。</li>
+</ol>
+<div class="note">这个工作台没有「本地版 / 云端版」两套。线上这一个就是唯一版本，数据全在云端 Postgres 里；本地 HTML 文件只是源码构建产物，不需要发给别人。</div>
+
+<h2>1. 目录</h2>
+<ol class="toc">
+  <li>系统定位与页面结构</li>
+  <li>技术架构与数据模型</li>
+  <li>云端环境与权限</li>
+  <li>当前数据状态</li>
+  <li>已完成的工作（版本演进）</li>
+  <li>还没做完的事（交接重点）</li>
+  <li>日常操作指引</li>
+  <li>排障手册</li>
+  <li>代码文件与发布流程</li>
+  <li>需要线下单独交接的事项</li>
+</ol>
+
+<h2>2. 系统定位与页面结构</h2>
+<p>这是一套给多店铺运营组用的内部工作台，覆盖约 23 家店铺（其中 5 家重点：松迅、居家官方、众创、医疗器械、器械保健），解决三件事：<b>每天看什么</b>（指标异常）、<b>要办什么</b>（任务与缺口）、<b>配置在哪</b>（风控、接口、资产）。</p>
+
+<h3>2.1 七个页面</h3>
+<table>
+  <thead><tr><th style="width:18%">页面</th><th style="width:12%">分组</th><th>作用</th></tr></thead>
+  <tbody>
+    <tr><td>首页 · 信号带</td><td>每天看</td><td>指标异动、待办压力、店铺缺口的一屏总览，是每天第一眼看的页面</td></tr>
+    <tr><td>数据看板</td><td>每天看</td><td>按店铺看采纳率 / 生成率 / 转化率 / 回复率等指标的趋势与目标差距</td></tr>
+    <tr><td>店铺库</td><td>要办事</td><td>核心页面。按平台分组的店铺台账，行内展开账号明细（角色、登录账号、绑定人、尾号、使用人、岗位、状态）</td></tr>
+    <tr><td>资产库</td><td>要办事</td><td>话术模板、知识切片、词表、配置等资产的登记与状态</td></tr>
+    <tr><td>协同与任务</td><td>要办事</td><td>任务分派、优先级、截止日期、逾期提示</td></tr>
+    <tr><td>质检风控设置</td><td>配置区</td><td>禁用词、审核流程、分流规则等风控项</td></tr>
+    <tr><td>AI 接口</td><td>配置区</td><td>话术生成 / 资料摘要 / 禁用词自检三条模型通道的状态与调用量</td></tr>
+  </tbody>
+</table>
+
+<h3>2.2 使用者与权限</h3>
+<p>组内成员用各自的 WorkBuddy 账号登录，<b>看到的是同一份数据</b>（刻意不做按人隔离），谁改的都算数。没有管理员/普通成员的区分，也没有审批流——这是内部工具，靠人盯，不靠系统卡。</p>
+
+<h2>3. 技术架构与数据模型</h2>
+<h3>3.1 架构</h3>
+<ul>
+  <li><b>前端</b>：单文件 HTML（约 282 KB），内联了云服务 SDK、样式和全部逻辑，无构建依赖、无外链 CDN，打开即用。</li>
+  <li><b>后端</b>：WorkBuddy 云服务托管的后端（Postgres + PostgREST 风格接口 + WorkBuddy OAuth），不用自己运维服务器。</li>
+  <li><b>身份</b>：WorkBuddy 账号 OAuth，或邮箱验证码。未登录只能看到登录页。</li>
+</ul>
+
+<h3>3.2 数据模型</h3>
+<p>只有两张表，简单到不需要 ORM：</p>
+<table>
+  <thead><tr><th style="width:22%">表</th><th style="width:26%">关键字段</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><code>wb_records</code></td><td><code>key</code>（主键）、<code>coll</code>、<code>rec_id</code>、<code>data</code>（JSONB）、<code>updated_at</code></td><td>一条业务记录一行，<code>coll</code> 区分集合，<code>data</code> 存整条记录</td></tr>
+    <tr><td><code>wb_kv</code></td><td><code>k</code>（主键）、<code>v</code>（JSONB）</td><td>全局配置，目前只存一条 <code>meta</code>（库版本、播种时间）</td></tr>
+  </tbody>
+</table>
+<p><code>coll</code> 取值共 8 个集合：<code>shops</code>（店铺）、<code>accounts</code>（账号）、<code>metrics</code>（指标）、<code>tasks</code>（任务）、<code>qc</code>（风控）、<code>assets</code>（资产）、<code>apis</code>（接口）、<code>alerts</code>（预警）。</p>
+
+<h3>3.3 同步机制</h3>
+<ul>
+  <li>登录后一次性把全量记录拉进内存（分页，每页 1000 行），页面渲染走内存，所以切页很快。</li>
+  <li>写操作只推<b>差分</b>：客户端保留一份「上次同步时的快照」，只 upsert 变化过的行、只删除消失的行，不会整库覆盖，因此不会把别人刚改的数据冲掉。</li>
+  <li>保存做 300 毫秒防抖，批量 200 条一次提交。</li>
+  <li>冲突策略是<b>后写覆盖</b>（同一条记录同一时刻两个人改，后提交的赢）。团队规模小，够用；如果要严谨，需要加版本号与合并逻辑。</li>
+</ul>
+
+<h2>4. 云端环境与权限</h2>
+<h3>4.1 云端资源</h3>
+<table>
+  <thead><tr><th style="width:26%">项目</th><th>值</th></tr></thead>
+  <tbody>
+    <tr><td>应用名（应用卡片）</td><td>AI运营组工作台</td></tr>
+    <tr><td>应用 ID</td><td><code>wbapp_6H4ne4Pivj47cmkaQcnAzt</code></td></tr>
+    <tr><td>访问域名</td><td><code>ai-ops-workbench-43332.app.workbuddy.host</code></td></tr>
+    <tr><td>分享链接</td><td><code>https://ai-ops-workbench-43332.app.workbuddy.host/?sharecode=L6I6SZYJ54</code></td></tr>
+    <tr><td>管理入口</td><td>WorkBuddy「设置 — 数据管理 — 应用」</td></tr>
+    <tr><td>数据表</td><td><code>wb_records</code>、<code>wb_kv</code>（仅这两张，没有多余表）</td></tr>
+  </tbody>
+</table>
+
+<h3>4.2 权限设计（重要）</h3>
+<ul>
+  <li>两张表都开启了行级安全（RLS），策略只授予登录用户组 <code>authenticated</code>，规则是「团队共享一份数据」：<code>USING (true) WITH CHECK (true)</code>。</li>
+  <li>匿名角色 <code>anon</code> 的授权已全部收回。<b>未登录访问数据接口会直接返回 <code>permission denied</code></b>，这是预期行为，不是故障。</li>
+  <li>所以：<b>链接不能随便发到外部群</b>——登录页谁都能打开，但没登录读不到任何数据；想限制范围，靠不传播链接 + 账号体系。</li>
+</ul>
+
+<h2>5. 当前数据状态</h2>
+<table>
+  <thead><tr><th style="width:22%">集合</th><th style="width:14%">条数</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>店铺 shops</td><td>128</td><td>约 23 家在营 + 历史/关店店铺；含平台、负责人、绑定人、授权状态、排序</td></tr>
+    <tr><td>账号 accounts</td><td>291</td><td>拼多多子账号，来自《拼多多店铺信息【准确版】》。<b>只存绑定人 + 手机后四位，不存密码、不存完整手机号</b></td></tr>
+    <tr><td>指标 metrics</td><td>28</td><td>示例数据，用于验证看板渲染，<b>尚未接入真实数据源</b></td></tr>
+    <tr><td>任务 tasks</td><td>8</td><td>示例任务</td></tr>
+    <tr><td>预警 alerts</td><td>5</td><td>示例预警</td></tr>
+    <tr><td>资产 assets</td><td>6</td><td>示例资产</td></tr>
+    <tr><td>风控 qc</td><td>3</td><td>示例风控项</td></tr>
+    <tr><td>接口 apis</td><td>3</td><td>示例模型通道</td></tr>
+    <tr><td colspan="2"><b>合计 472 条</b></td><td>首次登录时自动播种；后续以云端为准</td></tr>
+  </tbody>
+</table>
+<div class="warn">拿到的是一套「跑得通但没喂真数据」的系统。店铺和账号是真实的；指标、任务、资产、风控、接口这些目前是示例内容，需要按实际业务替换。这是接手后最主要的工作量。</div>
+
+<h2>6. 已完成的工作（版本演进）</h2>
+<table>
+  <thead><tr><th style="width:12%">版本</th><th style="width:26%">主题</th><th>关键内容</th></tr></thead>
+  <tbody>
+    <tr><td>v1</td><td>静态工作台</td><td>按「信号带」文档搭出七个页面骨架，统一视觉与组件</td></tr>
+    <tr><td>v2</td><td>可录入</td><td>表单、草稿、导入、可配置目标值；数据落地</td></tr>
+    <tr><td>v2.3</td><td>店铺库重构</td><td>按平台分组、四格信号、六类缺口筛选、行内账号面板</td></tr>
+    <tr><td>v2.4</td><td>导入拼多多账号</td><td>291 条账号入库，96 个店铺分组匹配，36 家补为历史店铺</td></tr>
+    <tr><td>v2.5</td><td>店铺库去指标</td><td>店铺库只做「店 + 账号」台账，不再掺采纳率</td></tr>
+    <tr><td>v3.0–3.3</td><td>侧栏重做</td><td>浅灰玻璃浮动面板、线性图标、单块滑动高亮、移动端抽屉；对比度逐项实测达标</td></tr>
+    <tr><td>v4.0</td><td>云端共享</td><td>接 WorkBuddy 云服务：云端数据库、登录门禁、团队共享一份数据、断线提示</td></tr>
+    <tr><td>v4.1</td><td>改名</td><td>多店铺运营工作台 → AI运营组工作台；新开应用以修正应用卡片名</td></tr>
+    <tr><td>v4.2</td><td>去密码</td><td>整块拆除口令保险箱；账号改记「绑定人 + 手机后四位」；云端存量数据同步清洗</td></tr>
+  </tbody>
+</table>
+
+<h3>6.1 v4.2 的特殊说明（别踩回去）</h3>
+<p>上一版做过一套「口令保险箱」：密码用 PBKDF2 + AES-GCM 加密后存云端，输口令才能看。后来业务判断不需要密码了，于是<b>整块下线</b>，包括加密逻辑、解锁弹窗、显示/隐藏密码、自动上锁、Excel 密码导入，以及配套的浏览器 xlsx 解析器。</p>
+<ul>
+  <li>云端存量账号里的 <code>pwd</code>、<code>hasPwd</code>、完整 <code>phone</code> 字段已用 SQL 删除，并按原手机号生成 <code>tail</code>（后四位）。校验结果：291 条中残留旧字段 0 条、290 条有合法四位尾号。</li>
+  <li>加密密文那一行（<code>wb_kv</code> 中 <code>k='vault'</code>）已删除，现在 <code>wb_kv</code> 只剩 <code>meta</code>。</li>
+  <li>构建脚本里加了一道闸：产物中一旦出现 <code>data-pwd</code>、<code>openVault</code>、<code>vaultPersist</code>、<code>__parseXlsxRows</code> 或任何明文密码字面量，构建直接失败。<b>不要为了「方便」把密码功能加回来</b>，这是业务明确决定。</li>
+</ul>
+
+<h2>7. 还没做完的事（交接重点）</h2>
+<p>按优先级排列，前两条建议接手第一周就处理掉。</p>
+
+<h3>P0 · 统一入口，下线旧链接</h3>
+<p>目前存在两个可用地址，各自连的是<b>不同且互不相通的数据库</b>：</p>
+<table>
+  <thead><tr><th style="width:34%">链接</th><th style="width:16%">状态</th><th>处置建议</th></tr></thead>
+  <tbody>
+    <tr><td><code>...ai-ops-workbench-43332...?sharecode=L6I6SZYJ54</code></td><td>新，正式入口</td><td>保留，发给全组</td></tr>
+    <tr><td><code>...shop-ops-workbench-22038...?sharecode=DZ3YDH54UE</code></td><td>旧应用，仍在线，库是空的</td><td>建议下线，避免有人误用旧链接录数据后「找不到」</td></tr>
+  </tbody>
+</table>
+<div class="warn">风险：两个环境的店铺数据不会互相出现。如果有人用旧链接录了数据，你在新链接里看不到，而且不会报错——只是「凭空消失」。发现数据少了一块，先确认对方用的是哪个链接。</div>
+
+<h3>P1 · 补齐其他平台的账号</h3>
+<p>291 条账号全部是拼多多。天猫、京东、抖音三家平台共 33 家店铺「有店无账号」，店铺库里显示为「缺账号」。需要各平台负责人提供账号清单后补录（按「角色 / 登录账号 / 绑定人 / 尾号」四条填即可）。</p>
+
+<h3>P1 · 接入真实指标数据</h3>
+<p>数据看板的 28 条指标是示例值。真实数据来源是探域 / OMS，现状是手工导入 CSV/TSV 或 JSON（页面上有导入入口），尚未做成定时同步。建议接手后确认：指标口径（采纳率 / 生成率 / 转化率 / 回复率 / 风控率 / 纯智占比）由谁负责统计、多久一次、从哪个系统导出。</p>
+
+<h3>P2 · 目标值与统计周期还没上云</h3>
+<p>「目标值」和「统计周期」这组配置目前存在各自浏览器的本地存储里，<b>谁改了只影响自己</b>，换台电脑就回到默认值。如果要求全组口径一致，需要把这块搬进云端 <code>wb_kv</code>。同理，表单未提交的草稿和深浅色主题也是本机偏好，不上云。</p>
+
+<h3>P2 · 旧密码表格的处置</h3>
+<p>桌面的《拼多多店铺信息【准确版】.xlsx》里仍是完整手机号和明文密码。工作台不再需要它，建议由原持有人确认后删除或转移到受控位置，别再散落在个人桌面。</p>
+
+<h3>P3 · 历史店铺与重复店名</h3>
+<p>128 家店铺中有 36 家是「历史」标记，另有 8 组名字极为相似的店铺——已确认<b>每组确实是两家不同的店</b>，不要合并。如果后续要清理历史店，请逐家确认后单独处理，不要批量删。</p>
+
+<h2>8. 日常操作指引</h2>
+<h3>8.1 常见动作</h3>
+<table>
+  <thead><tr><th style="width:24%">想做什么</th><th>怎么做</th></tr></thead>
+  <tbody>
+    <tr><td>新增一家店</td><td>店铺库 → 右上「新增店铺」→ 填名称、平台、负责人、绑定人、授权状态</td></tr>
+    <tr><td>给某店加账号</td><td>店铺库展开该店 → 账号面板右上「新增账号」→ 填角色、登录账号、绑定人、尾号（尾号只收 4 位，多输会自动截断）</td></tr>
+    <tr><td>改一条已有数据</td><td>行尾的编辑图标；改完自动写入云端</td></tr>
+    <tr><td>看某店缺什么</td><td>店铺库顶部六个筛选：全部 / 在营 / 重点 / 历史 / 缺账号 / 缺负责人</td></tr>
+    <tr><td>找一家店</td><td>店铺库左上搜索框，按店名过滤</td></tr>
+    <tr><td>录入指标</td><td>数据看板 → 查看该店 → 指标录入（或粘贴 CSV/TSV/JSON 批量导入）</td></tr>
+  </tbody>
+</table>
+
+<h3>8.2 数据什么时候生效</h3>
+<p>改完约 0.3 秒写入云端；其他人需要刷新页面才看到（当前没有做实时推送）。如果你改完立刻刷新却看不到自己的改动，等 2 秒再刷。</p>
+
+<h3>8.3 不要做的事</h3>
+<ul>
+  <li>不要用旧链接录数据（见 P0）。</li>
+  <li>不要在页面里批量删除店铺——工作台没有回收站，删了要从云端数据库恢复。</li>
+  <li>不要把密码写进任何字段。系统已经不存密码，也没有地方存。</li>
+</ul>
+
+<h2>9. 排障手册</h2>
+<table>
+  <thead><tr><th style="width:32%">现象</th><th style="width:30%">原因</th><th>处理</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>页面弹出「数据加载失败」或「Could not find the table 'public.wb_records' in the schema cache」</td>
+      <td>连到了没有建表的云环境（换新应用后最容易发生）</td>
+      <td>让后台在对应应用里建 <code>wb_records</code> / <code>wb_kv</code> 并刷新 schema 缓存；确认产物指向的应用 ID 是否正确</td>
+    </tr>
+    <tr>
+      <td>控制台报 <code>permission denied for table wb_records</code>（码 42501）</td>
+      <td>未登录，或该表没给登录用户组授权 / 没建策略</td>
+      <td>先确认已登录；若是配置问题，检查表授权对象为 <code>authenticated</code> 且有团队策略</td>
+    </tr>
+    <tr>
+      <td>一直停在加载动画</td>
+      <td>会话过期或网络异常</td>
+      <td>刷新页面重新登录；仍不行看控制台是否有 401</td>
+    </tr>
+    <tr>
+      <td>登录后数据是空的</td>
+      <td>连到了另一个环境（新旧链接混用）</td>
+      <td>核对地址栏域名与 sharecode，用 P0 那条正式链接</td>
+    </tr>
+    <tr>
+      <td>同事看不到我改的内容</td>
+      <td>他没刷新，或他在旧链接上</td>
+      <td>让他刷新；核对链接</td>
+    </tr>
+    <tr>
+      <td>手机端侧栏打不开</td>
+      <td>窄屏下侧栏是抽屉模式</td>
+      <td>点左上角方形按钮唤出，点遮罩关闭</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>10. 代码文件与发布流程</h2>
+<h3>10.1 文件结构</h3>
+<table>
+  <thead><tr><th style="width:34%">路径</th><th>作用</th></tr></thead>
+  <tbody>
+    <tr><td><code>signal-board-v1-static.html</code></td><td>页面骨架（head、侧栏、顶栏、挂载点），改结构改这里</td></tr>
+    <tr><td><code>src/app.js</code></td><td>全部业务逻辑：数据层、云端同步、七个页面渲染、表单、事件</td></tr>
+    <tr><td><code>src/app.css</code></td><td>全部样式，含侧栏玻璃面板与移动端抽屉</td></tr>
+    <tr><td><code>src/build.cjs</code></td><td>构建脚本：把 SDK、配置、样式、逻辑内联成单文件，并做安全闸校验</td></tr>
+    <tr><td><code>src/vendor/wb-cloud.global.js</code></td><td>云服务 SDK（IIFE 版本，供单文件直接内联）</td></tr>
+    <tr><td><code>src/_cloud-stub.js</code></td><td>本地测试用的内存假云端，<b>不发布</b></td></tr>
+    <tr><td><code>dist/index.html</code></td><td>发布产物，内容与根目录 <code>signal-board.html</code> 一致</td></tr>
+  </tbody>
+</table>
+
+<h3>10.2 改代码 → 上线</h3>
+<ol>
+  <li>只改 <code>src/</code> 下的源文件，<b>不要直接改 <code>dist/index.html</code></b>，下次构建会被覆盖。</li>
+  <li>构建：<code>node src/build.cjs</code>，产物同时写 <code>signal-board.html</code> 与 <code>dist/index.html</code>。</li>
+  <li>本地自测（不连真云）：<code>WB_STUB=1 node src/build.cjs</code> 生成带内存云桩的版本，配合本地静态服务打开。</li>
+  <li>发布：用 WorkBuddy 的站点发布能力，应用 ID 固定为 <code>wbapp_6H4ne4Pivj47cmkaQcnAzt</code>、域名前缀 <code>ai-ops-workbench</code>、入口 <code>index.html</code>。发布后链接不变。</li>
+</ol>
+<div class="note">构建脚本里有两道闸门（明文密码字面量、已下线的密码/保险箱代码）。构建失败先看报错，别注释掉闸门。</div>
+
+<h3>10.3 改代码时容易踩的坑</h3>
+<ul>
+  <li>产物是单文件，SDK 与配置都内联在 <code>dist/index.html</code> 里；换云环境必须改 <code>src/build.cjs</code> 里的 <code>WB_CFG</code>（endpoint + publishableKey），然后重新构建，否则页面还连旧环境。</li>
+  <li>页面 ID 与 <code>RENDER</code> 映射在 <code>src/app.js</code> 的 <code>PAGES</code> 常量里；新增页面要同时补侧栏图标与渲染函数。</li>
+  <li>账号表的「尾号」列在窄屏下保持显示，「使用人 / 岗位」两列会被隐藏，改列顺序时记得同步调整隐藏规则。</li>
+  <li>改完务必确认构建产物里没有明文密码：直接搜 <code>yongheng123</code> 之类的字面量，命中即为事故。</li>
+</ul>
+
+<h2>11. 需要线下单独交接的事项</h2>
+<ul>
+  <li><b>WorkBuddy 账号</b>：谁能登录、需要新开哪些成员，由你按实际人员配置，文档里不列账号。</li>
+  <li><b>云环境管理权</b>：应用 <code>wbapp_6H4ne4Pivj47cmkaQcnAzt</code> 的配置与数据库管理入口在 WorkBuddy「设置 — 数据管理 — 应用」。</li>
+  <li><b>指标口径负责人</b>：采纳率等六个指标由业务侧谁统计、数据从哪个系统出，需要在交接会上明确到人。</li>
+  <li><b>各平台账号清单来源</b>：天猫 / 京东 / 抖音三家目前没有清单，需要各自负责人提供。</li>
+</ul>
+
+<h2>12. 附：常用数据检查 SQL</h2>
+<p class="small">在云数据库管理入口执行，用于核对交接后的数据是否完整。</p>
+<table>
+  <thead><tr><th style="width:40%">目的</th><th>语句</th></tr></thead>
+  <tbody>
+    <tr><td>各集合条数</td><td><code>select coll, count(*) from wb_records group by 1 order by 1;</code></td></tr>
+    <tr><td>账号是否还有残留字段</td><td><code>select count(*) from wb_records where coll='accounts' and (data ? 'pwd' or data ? 'phone' or data ? 'hasPwd');</code></td></tr>
+    <tr><td>尾号是否合法</td><td><code>select count(*) from wb_records where coll='accounts' and data->>'tail' ~ '^[0-9]{4}$';</code></td></tr>
+    <tr><td>KV 里有哪些键</td><td><code>select k from wb_kv order by k;</code></td></tr>
+    <tr><td>策略与授权核对</td><td><code>select tablename, policyname, roles::text from pg_policies where tablename in ('wb_records','wb_kv');</code></td></tr>
+  </tbody>
+</table>
+
+<p class="small" style="margin-top:24pt;">本文档对应工作台版本 v4.2（2026-11-12）。后续每次发布请同步更新第 6 节与第 7 节。</p>
+
+</body>
+</html>

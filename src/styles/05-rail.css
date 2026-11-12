@@ -1,0 +1,239 @@
+   v3 侧栏 · 浅灰玻璃浮动面板
+   颜色全部走 .rail 作用域内的变量，整块可换肤（深色主题单独覆盖）
+   ============================================================ */
+.rail{
+  /* 浅灰玻璃皮肤：文字全部落到工作台自身的青墨色阶上 */
+  --ink:#0F2A32;
+  --ink2:#3E5B63;
+  --ink3:#52707A;
+  --ink4:#5A7880;
+  --grp-c:#45646D;
+  --hair:rgba(255,255,255,.72);
+  --card:rgba(255,255,255,.55);
+  --hover:rgba(18,58,68,.055);
+  --sel:#246B78;
+  --sel-fill:rgba(36,107,120,.10);
+  --sel-ring:rgba(36,107,120,.22);
+  --dot:#BE8F1C;
+  --av-bg:#D5E9ED;
+  --av-fg:#14444F;
+  --logo-a:#23707E;
+  --logo-b:#184A55;
+  --logo-fg:#F2FBFD;
+  --rail-bg:linear-gradient(158deg,rgba(255,255,255,.82) 0%,rgba(244,248,249,.66) 46%,rgba(232,239,241,.70) 100%);
+  --rail-line:rgba(18,58,68,.09);
+  --rail-top:rgba(255,255,255,.92);
+  --rail-ring:rgba(18,58,68,.07);
+
+  position:sticky;top:16px;
+  width:216px;height:calc(100vh - 32px);
+  margin:16px;
+  padding:16px 12px 12px;
+  background:var(--rail-bg);
+  -webkit-backdrop-filter:blur(20px) saturate(1.4);
+  backdrop-filter:blur(20px) saturate(1.4);
+  border:1px solid var(--hair);
+  border-radius:20px;
+  box-shadow:
+    0 0 0 1px var(--rail-ring),
+    0 1px 2px rgba(18,58,68,.06),
+    0 18px 40px -22px rgba(18,58,68,.24),
+    inset 0 1px 0 var(--rail-top);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  z-index:30;
+}
+
+/* 深色主题：同一结构换深色玻璃，不必改组件 */
+html[data-theme="dark"] .rail{
+  --ink:#E9F4F7;
+  --ink2:#BFD6DB;
+  --ink3:#8FADB4;
+  --ink4:#93B2B8;
+  --grp-c:#A6C0C5;
+  --hair:rgba(255,255,255,.10);
+  --card:rgba(255,255,255,.06);
+  --hover:rgba(255,255,255,.07);
+  --sel:#63D0DE;
+  --sel-fill:rgba(99,208,222,.16);
+  --sel-ring:rgba(99,208,222,.36);
+  --dot:#D9A93C;
+  --av-bg:#16414B;
+  --av-fg:#D2EAEE;
+  --rail-bg:linear-gradient(158deg,rgba(24,50,58,.74) 0%,rgba(11,30,37,.64) 52%,rgba(8,24,30,.70) 100%);
+  --rail-line:rgba(255,255,255,.10);
+  --rail-top:rgba(255,255,255,.14);
+  --rail-ring:rgba(255,255,255,.05);
+}
+
+
+.rail-inner{position:relative;display:flex;flex-direction:column;gap:2px;flex:1;min-height:0}
+.rail-inner > :not(.nav-glide){position:relative;z-index:1}
+
+/* 滑动高亮：独立绝对定位块，位于内容之下 */
+.nav-glide{
+  position:absolute;left:0;top:0;
+  width:0;height:0;
+  border-radius:8px;
+  background:var(--sel-fill);
+  box-shadow:inset 0 0 0 1px var(--sel-ring);
+  pointer-events:none;z-index:0;opacity:0;
+  transform:translate3d(0,0,0);
+  will-change:transform,width,height,opacity;
+  transition:
+    transform .34s cubic-bezier(.32,.72,0,1),
+    width .34s cubic-bezier(.32,.72,0,1),
+    height .34s cubic-bezier(.32,.72,0,1),
+    opacity .18s linear;
+}
+.rail.is-ready .nav-glide{opacity:1}
+.rail.no-anim .nav-glide{transition:none!important}
+
+/* 1. 品牌区 */
+.r-brand{display:flex;align-items:center;gap:10px;padding:0 8px;margin-bottom:16px}
+.r-logo{
+  width:30px;height:30px;flex:none;border-radius:8px;
+  background:linear-gradient(135deg,var(--logo-a),var(--logo-b));
+  display:grid;place-items:center;color:#fff;
+}
+.r-logo svg{width:16px;height:16px;display:block}
+.r-brand-t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.r-brand-t b{font-size:13px;font-weight:600;line-height:1.2;color:var(--ink)}
+.r-brand-t i{font-size:10px;font-weight:500;letter-spacing:.09em;line-height:1.2;color:var(--ink3);font-style:normal}
+
+/* 2. 分组标题（每天看 / 要办事 / 配置区）—— 只做节奏分隔，但要一眼能看见 */
+.nav-grp-t{
+  font-size:11px;font-weight:600;letter-spacing:.10em;
+  color:var(--grp-c);
+  padding:12px 8px 8px;
+  user-select:none;
+}
+.nav-grp-t:first-child{padding-top:0}
+
+/* 3. 菜单项 */
+.nav{display:flex;flex-direction:column;gap:2px;min-height:0}
+.nav button{
+  display:flex;align-items:center;gap:8px;
+  width:100%;height:34px;padding:0 8px;
+  border:none;border-radius:8px;background:none;
+  color:var(--ink2);font-size:13px;font-weight:400;
+  text-align:left;
+  transition:color .12s linear,background .12s linear;
+}
+.nav button .ic{
+  display:grid;place-items:center;flex:none;
+  width:15px;height:15px;color:var(--ink4);
+  transition:color .12s linear;
+}
+.nav button .ic svg{width:15px;height:15px;display:block}
+.nav button .lb{
+  flex:1;min-width:0;line-height:1;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.nav button .meta{
+  margin-left:auto;flex:none;
+  font-family:var(--mono);font-variant-numeric:tabular-nums;
+  font-size:11px;line-height:1;color:var(--ink4);
+  opacity:0;transition:opacity .14s linear;
+}
+.nav button .meta .dot{
+  display:block;width:5px;height:5px;border-radius:50%;
+  background:var(--dot);
+}
+.nav button:hover{background:var(--hover);color:var(--ink)}
+.nav button:hover .ic{color:var(--ink)}
+.nav button:hover .meta,
+.nav button:focus-visible .meta{opacity:1}
+.nav button.on{color:var(--ink);background:transparent}
+.nav button.on .ic{color:var(--sel)}
+.nav button:focus-visible{outline:1px solid var(--sel-ring);outline-offset:1px}
+
+/* 4. 用户卡 */
+.r-user{
+  margin-top:auto;
+  display:flex;align-items:center;gap:9px;
+  padding:8px;border-radius:12px;
+  background:var(--card);
+  border:1px solid var(--rail-line);
+}
+.r-av{
+  width:26px;height:26px;flex:none;border-radius:50%;
+  background:var(--av-bg);color:var(--av-fg);
+  display:grid;place-items:center;
+  font-size:11px;font-weight:600;line-height:1;
+}
+.r-user-t{display:flex;flex-direction:column;gap:1px;min-width:0}
+.r-user-t b{font-size:13px;font-weight:600;line-height:1.2;color:var(--ink)}
+.r-user-t i{font-size:11px;line-height:1.2;color:var(--ink3);font-style:normal;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* 汉堡与遮罩 */
+.rail-burger{
+  display:none;place-items:center;
+  width:30px;height:30px;margin-left:-6px;flex:none;
+  border:1px solid var(--line);border-radius:8px;color:var(--ink2);
+}
+.rail-burger svg{width:15px;height:15px;display:block}
+.rail-burger:hover{background:var(--panel2);color:var(--ink)}
+.rail-mask{
+  position:fixed;inset:0;
+  background:rgba(6,22,26,.34);
+  opacity:0;visibility:hidden;
+  transition:opacity .28s cubic-bezier(.32,.72,0,1),visibility .28s;
+  z-index:60;
+}
+
+@media (min-width:921px){
+  .rail-mask{display:none}
+}
+
+@media (max-width:920px){
+  :root{--rail:0px}
+  .app{grid-template-columns:1fr}
+  .rail{
+    position:fixed;left:0;top:0;bottom:0;
+    width:268px;max-width:84vw;height:100dvh;
+    margin:0;padding-top:18px;
+    border-radius:0 20px 20px 0;
+    transform:translateX(-104%);
+    transition:transform .28s cubic-bezier(.32,.72,0,1);
+    z-index:70;
+  }
+  .rail[data-open="true"]{transform:none}
+  .rail-mask[data-on="true"]{opacity:1;visibility:visible}
+  .rail-burger{display:grid}
+}
+@media (max-height:560px){
+  .r-brand{margin-bottom:8px}
+  .nav-grp-t{padding:6px 8px 4px}
+  .r-user{padding:6px}
+}
+
+/* ≤860 顶栏用伪元素出标题，汉堡需排到标题前面 */
+@media (max-width:860px){
+  .rail-burger{order:-1}
+}
+/* logo 内图标不用纯白 */
+.r-logo{color:var(--logo-fg)}
+
+/* 玻璃质感：左上角一圈柔光折射，让浅灰不透成"死白" */
+.rail::before{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  border-radius:inherit;
+  background:
+    radial-gradient(120% 58% at 0% 0%,rgba(255,255,255,.55),rgba(255,255,255,0) 62%),
+    radial-gradient(90% 40% at 100% 100%,rgba(18,58,68,.05),rgba(18,58,68,0) 70%);
+}
+html[data-theme="dark"] .rail::before{
+  background:
+    radial-gradient(120% 58% at 0% 0%,rgba(255,255,255,.07),rgba(255,255,255,0) 62%),
+    radial-gradient(90% 40% at 100% 100%,rgba(0,0,0,.18),rgba(0,0,0,0) 70%);
+}
+
+/* 抽屉浮在正文之上：玻璃稍微加厚，避免下方内容透过影响读字 */
+@media (max-width:920px){
+  .rail{--rail-bg:linear-gradient(158deg,rgba(255,255,255,.94) 0%,rgba(246,250,251,.90) 46%,rgba(238,244,246,.92) 100%)}
+  html[data-theme="dark"] .rail{--rail-bg:linear-gradient(158deg,rgba(22,46,54,.93) 0%,rgba(11,30,37,.89) 52%,rgba(9,26,32,.91) 100%)}
+}
+
+/* ============================================================

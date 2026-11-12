@@ -1,0 +1,41 @@
+/* ===== v2.4 · 账号信息条（绑定人 / 尾号） ===== */
+.vault{
+  display:flex;align-items:center;gap:14px;justify-content:space-between;flex-wrap:wrap;
+  padding:11px 14px;margin:2px 0 14px;border:1px solid var(--accent-line);
+  border-radius:var(--r);background:var(--accent-panel);
+}
+.vault-l{display:flex;align-items:center;gap:10px;min-width:0}
+.vault-ic{
+  display:grid;place-items:center;width:28px;height:28px;flex:none;border-radius:8px;
+  background:var(--panel);color:var(--amber);border:1px solid var(--accent-line);
+}
+.vault-ic svg{width:14px;height:14px}
+.vault b{font-weight:500;font-size:12px;color:var(--ink);display:block;line-height:1.5}
+.vault-t{font-size:10.5px;color:var(--ink3);line-height:1.65}
+.vault-r{display:flex;gap:6px;flex:none}
+.btn.on{background:var(--amber);border-color:var(--amber);color:#fff}
+.btn.on:hover{filter:brightness(1.06)}
+
+.acct-sub{display:flex;align-items:center;gap:4px}
+.acct-sub svg{width:11px;height:11px;flex:none;opacity:.75}
+/* 尾号列：四个数字等宽排开，便于口头核对 */
+.tail-cell{white-space:nowrap;letter-spacing:1.2px;color:var(--ink);font-weight:500}
+
+.pw-field{position:relative;display:flex;align-items:center}
+.pw-field input{width:100%;padding-right:36px;font-family:var(--mono)}
+.pw-eye{
+  position:absolute;right:5px;width:26px;height:26px;display:grid;place-items:center;
+  border:none;background:none;color:var(--ink3);cursor:pointer;border-radius:6px;
+}
+.pw-eye:hover{color:var(--amber);background:var(--panel3)}
+.pw-eye.on{color:var(--amber)}
+.pw-eye svg{width:14px;height:14px}
+
+@media (max-width:860px){
+  .store-stats .ss:last-child:nth-child(odd){grid-column:1 / -1;border-right:none;border-bottom:none}
+  .vault{padding:10px 12px}
+  .vault-r .btn{width:100%}
+  .vault-r{width:100%}
+}
+
+/* ============================================================
