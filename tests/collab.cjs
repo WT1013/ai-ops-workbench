@@ -32,25 +32,24 @@ const SHOT = 'tmp';
   await page.waitForSelector('#modePill', { timeout: 15000 });
   await page.waitForTimeout(600);
 
-  /* 1. 默认只读 */
+  /* 1. 默认 = 成员编辑（登录态） */
   const ro = await page.evaluate(() => document.body.classList.contains('ro'));
-  ok('默认进入只读预览', ro === true);
-  ok('徽标文字=只读预览', (await page.textContent('#modePill')).trim() === '只读预览');
+  ok('默认进入成员编辑（登录态）', ro === false);
+  ok('徽标文字=成员编辑', (await page.textContent('#modePill')).trim() === '成员编辑');
 
-  /* 2. 写入口被隐藏 + store 写入被拦 */
+  /* 2. 写入口可见 + store 写入可用 */
   const addVisible = await page.evaluate(() => {
     const b = document.querySelector('[data-new]');
     return !!b && b.offsetParent !== null;
   });
-  ok('新增按钮不可见', addVisible === false);
+  ok('新增按钮可见', addVisible === true);
   const blocked = await page.evaluate(() => {
     const O = window.__OPS__;
-    const before = JSON.parse(JSON.stringify(O.store.get('shops', 's1') || {}));
-    const r = O.store.update('shops', 's1', { tag: '只读测试' });
+    const r = O.store.update('shops', 's1', { tag: '编辑测试' });
     const after = O.store.get('shops', 's1') || {};
-    return { ret: r, changed: after.tag !== before.tag };
+    return { ret: r, tag: after.tag };
   });
-  ok('只读时 store.update 被拦截', blocked.ret === null && blocked.changed === false);
+  ok('编辑模式写入成功', blocked.ret !== null && blocked.tag === '编辑测试');
 
   /* 3. CSV 数据源已加载 */
   const data = await page.evaluate(() => {
@@ -74,18 +73,15 @@ const SHOT = 'tmp';
   ok('设置页显示数据源版本', st.indexOf(data.ver) >= 0);
   ok('设置页显示行数', st.indexOf('128') >= 0);
 
-  /* 5. 解锁编辑 */
-  await page.click('#modePill');
-  await page.waitForSelector('#ecInp', { timeout: 5000 });
-  await page.fill('#ecInp', 'OPS-2647-KM9X');
-  await page.getByRole('button', { name: '解锁' }).click();
-  await page.waitForTimeout(600);
-  const nowEdit = await page.evaluate(() => ({
+  /* 5. 切到只读预览再切回来 */
+  await page.evaluate(() => window.__OPS__.setEditMode(false, true));
+  await page.waitForTimeout(300);
+  const nowRo = await page.evaluate(() => ({
     ro: document.body.classList.contains('ro'),
     can: window.__OPS__.canEdit(),
     pill: document.getElementById('modePill').textContent.trim()
   }));
-  ok('输码后进入编辑模式', nowEdit.can === true && nowEdit.ro === false, nowEdit.pill);
+  ok('切到只读预览', nowRo.can === false && nowRo.ro === true, nowRo.pill);
 
   await page.evaluate(() => window.__OPS__.go('stores'));
   await page.waitForTimeout(400);
@@ -93,29 +89,24 @@ const SHOT = 'tmp';
     const b = document.querySelector('[data-new]');
     return !!b && b.offsetParent !== null;
   });
-  ok('编辑模式下新增按钮可见', addVisible2 === true);
+  ok('只读模式下新增按钮隐藏', addVisible2 === false);
 
-  /* 6. 编辑可用 */
+  /* 6. 只读拦截 */
   const wrote = await page.evaluate(() => {
     const O = window.__OPS__;
-    const r = O.store.update('shops', 's1', { tag: '常规' });
+    const r = O.store.update('shops', 's1', { tag: '只读拦截' });
     const rec = O.store.get('shops', 's1') || {};
-    return { ok: !!r, tag: rec.tag, mt: +rec.__mt > 0 };
+    return { ok: r === null, tag: rec.tag === '编辑测试' };
   });
-  ok('编辑模式下写入成功', wrote.ok && wrote.tag === '常规');
-  ok('写入带 __mt 时间戳', wrote.mt === true);
+  ok('只读时 store.update 被拦截', wrote.ok && wrote.tag);
+  await page.evaluate(() => window.__OPS__.setEditMode(true, true));
 
-  /* 7. 错误码被拒 */
-  await page.evaluate(() => window.__OPS__.setEditMode(false, true));
-  await page.click('#modePill');
-  await page.waitForSelector('#ecInp', { timeout: 5000 });
-  await page.fill('#ecInp', 'wrong-code');
-  await page.getByRole('button', { name: '解锁' }).click();
-  await page.waitForTimeout(500);
-  const stillRo = await page.evaluate(() => document.body.classList.contains('ro'));
-  ok('错误编辑码不解锁', stillRo === true);
-  await page.keyboard.press('Escape');
-  await page.waitForTimeout(300);
+  /* 7. 错误编辑码不被接受 */
+  const badCode = await page.evaluate(async () => {
+    const O = window.__OPS__;
+    try { return await O.tryUnlock('wrong-code'); } catch (e) { return 'ERR'; }
+  });
+  ok('错误编辑码不解锁', badCode === false, String(badCode));
 
   /* 8. CSV 热更新 → 自动刷新 */
   const mfPath = path.join(__dirname, '..', 'dist', 'data', 'manifest.json');

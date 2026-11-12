@@ -2,7 +2,7 @@
   "$comment": "项目公共配置 —— 全组共用一份。改这里 = 改所有人的连接方式，无需改代码。",
   "app": {
     "name": "AI运营组工作台",
-    "version": "v6.1"
+    "version": "v6.2"
   },
   "wb": {
     "endpoint": "https://ai-ops-workbench-43332.app.workbuddy.host",
@@ -18,7 +18,7 @@
   },
   "edit": {
     "codeSha256": "232357b8a85e05f0ff657f3a255089698d44a7d85a51e98234d1ab18972c524c",
-    "hint": "团队编辑码向项目管理员索取；只读预览无需任何码"
+    "hint": "登录后即为成员编辑；右上角徽标可切换只读"
   },
   "connectors": {
     "dingtalk": {

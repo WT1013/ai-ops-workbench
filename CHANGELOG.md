@@ -1,5 +1,13 @@
 # 变更记录
 
+## v6.2 · 2026-11-12 · 存储回到 WorkBuddy 云库 + 登录门禁
+
+- **不用 Supabase 了**：存储切回 WorkBuddy 云服务（应用 `wbapp_6H4ne4Pivj47cmkaQcnAzt`），数据一直在原库，472 条记录没动过；`supabase/` 建表脚本删除。
+- **恢复登录门禁**：WorkBuddy 账号登录 / 邮箱验证码，登录后才能读写；未登录看不到任何业务数据。登录即成员编辑模式，右上角徽标可切只读。
+- **部署回到 WorkBuddy 域名**（同源）：`https://ai-ops-workbench-43332.app.workbuddy.host/?sharecode=L6I6SZYJ54`。此前放 GitHub Pages 上直连云库被浏览器跨域拦截（`TypeError: Failed to fetch`），同源后消失。
+- GitHub Pages 保留为源码镜像：在镜像上打开会直接提示走正式链接，避免误用。
+- 配置集中在 `config/app.config.json → wb`；回归测试改为「登录态默认可编辑」，两套测试 8/8 + 17/17 通过。
+
 ## v6.0 · 2026-11-12 · 多人协作版
 
 - **访问权限分层**：默认进入只读预览，所有写入口不渲染，`store` 写方法统一门禁；项目成员输团队编辑码（SHA-256 校验）进入编辑模式，可改数据 / 文案 / 页面 / 自定义代码。

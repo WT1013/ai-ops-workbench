@@ -1,12 +1,13 @@
 # AI运营组工作台
 
-多店铺运营工作台。**单文件前端 + Supabase 云端库 + CSV 数据源**：
-外部链接打开是**只读预览**，项目成员输团队编辑码后可编辑，全组共用一份数据。
+多店铺运营工作台。**单文件前端 + WorkBuddy 云库 + CSV 数据源**：
+登录后使用，全组共用一份云端数据；数据一直存在 WorkBuddy 云库（应用 `wbapp_6H4ne4Pivj47cmkaQcnAzt`）里，没有换过存储位置。
 
-- 线上入口：https://wt1013.github.io/ai-ops-workbench/
-- 源码仓库：https://github.com/WT1013/ai-ops-workbench（私有）
-- 当前版本：v6.0（`config/app.config.json → app.version`）
-- 云端：Supabase 项目 `kocuowtqklojxkhzlwpe`，表 `ops_records` / `ops_kv`
+- 线上入口（正式）：https://ai-ops-workbench-43332.app.workbuddy.host/?sharecode=L6I6SZYJ54
+- 源码镜像：https://wt1013.github.io/ai-ops-workbench/（只作源码展示，云端接口跨域不可用）
+- 源码仓库：https://github.com/WT1013/ai-ops-workbench
+- 当前版本：v6.2（`config/app.config.json → app.version`）
+- 云端：WorkBuddy 云服务，表 `wb_records` / `wb_kv`；配置见 `config/app.config.json → wb`
 - **迁移与协作规程：[MIGRATION.md](MIGRATION.md)**（权限、发布、防覆盖都在里面）
 
 ---
@@ -69,10 +70,9 @@ src/
     22-auth              启动流程、我的名字、远端拉取
     23-page-settings     设置页（文案 / 自定义代码 / 数据源状态）
     24-data-sync         CSV 拉取、轮询、时间戳合并
-    25-mode              只读 / 编辑模式、编辑码
+    25-mode              只读 / 编辑模式切换、编辑码
     29-init / 99-close   入口与出口
   styles/                6 个样式模块
-supabase/schema.sql      建表 + RLS + 授权
 signal-board-v1-static.html  HTML 骨架
 scripts/                 check / serve / export-data
 tests/                   regression（功能回归）+ collab（权限与数据源）

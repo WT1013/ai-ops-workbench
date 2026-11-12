@@ -135,9 +135,12 @@ h = h.replace('</body>', '<div id="modal-root"></div>\n<div id="toast-root"></di
 ['data-pwd', 'openVault', 'vaultPersist', '__parseXlsxRows'].forEach(k => {
   if (h.indexOf(k) >= 0) throw new Error('产物里仍有已下线的密码/保险箱代码：' + k);
 });
-/* 旧登录门禁代码不得回归（SDK 自带的 OAuth 工具函数不算门禁） */
-['showGate'].forEach(k => {
-  if (h.indexOf(k) >= 0) throw new Error('产物里仍有旧登录门禁代码：' + k);
+/* 保险箱 / 明文密码不得回归 */
+['yongheng123', 'xianma123', '123yongheng'].forEach(b => {
+  if (h.indexOf(b) >= 0) throw new Error('产物里仍有明文密码字面量：' + b);
+});
+['data-pwd', 'openVault', 'vaultPersist', '__parseXlsxRows'].forEach(k => {
+  if (h.indexOf(k) >= 0) throw new Error('产物里仍有已下线的密码/保险箱代码：' + k);
 });
 
 /* 7) 数据源：data/*.csv → 发布目录，并生成清单（含内容哈希与发布时间）
@@ -187,6 +190,8 @@ if (STUB) {
   fs.writeFileSync(path.join(ROOT, 'signal-board.html'), h);
   fs.mkdirSync(path.join(ROOT, 'dist'), { recursive: true });
   fs.writeFileSync(path.join(ROOT, 'dist/index.html'), h);
+  fs.mkdirSync(path.join(ROOT, 'dist/config'), { recursive: true });
+  fs.copyFileSync(path.join(ROOT, 'config/app.config.json'), path.join(ROOT, 'dist/config/app.config.json'));
   /* GitHub Pages 发布目录（仓库 Settings → Pages 指向 main /docs） */
   fs.mkdirSync(path.join(ROOT, 'docs'), { recursive: true });
   fs.writeFileSync(path.join(ROOT, 'docs/index.html'), h);

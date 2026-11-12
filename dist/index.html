@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>AI运营组工作台 v6.1</title>
+<title>AI运营组工作台 v6.2</title>
 <link rel="icon" href="data:,">
 <style>
 /* ============ tokens ============ */
@@ -1294,8 +1294,8 @@ body.ro .cfgbar-tip{display:none}
       <div class="r-user">
         <span class="r-av" id="uAv">·</span>
         <span class="r-user-t"><b id="uName">组内成员</b><i id="uRole">云端同步中</i></span>
-        <button class="r-out" id="uOut" type="button" title="修改我的名字" aria-label="修改我的名字">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 2.6l3.5 3.5M2.4 13.6l1.1-3.4 7-7a1.5 1.5 0 0 1 2.1 0l.2.2a1.5 1.5 0 0 1 0 2.1l-7 7-3.4 1.1z"/></svg>
+        <button class="r-out" id="uOut" type="button" title="退出登录" aria-label="退出登录">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.2 2.8H3.4v10.4h2.8"/><path d="M9.4 5.2 12.2 8l-2.8 2.8"/><path d="M12.2 8H6.6"/></svg>
         </button>
       </div>
     </div>
@@ -1330,7 +1330,7 @@ ${l.stack}`)}else c=o?.stack??"";let f=this.url.toString().length;return o?.name
 `)};return this.event=null,this.dataParts=[],e}},Qt=class{static{a(this,"LineDecoder")}buffer=new Uint8Array;decoder;constructor(){this.decoder=typeof TextDecoder>"u"?new fe:new TextDecoder("utf-8")}decode(e){let t=new Uint8Array(this.buffer.length+e.length);t.set(this.buffer),t.set(e,this.buffer.length),this.buffer=t;let s=[],n=0;for(let i=0;i<this.buffer.length;i++)if(this.buffer[i]===10||this.buffer[i]===13){let o=this.buffer.subarray(n,i),c=this.decoder.decode(o,{stream:!0});s.push(c),this.buffer[i]===13&&i+1<this.buffer.length&&this.buffer[i+1]===10&&i++,n=i+1}return n>0&&(this.buffer=this.buffer.slice(n)),s}flush(){if(this.buffer.length===0){let t=this.decoder.decode();return t?[t]:[]}let e=this.decoder.decode(this.buffer,{stream:!1});return this.buffer=new Uint8Array,e?[e]:[]}},at="[DONE]";async function*ct(r,e){let t=new Xt,s=new Qt,n=r.getReader(),i=!1,o=a(()=>{i=!0,n.cancel().catch(()=>{})},"onAbort");if(e){if(e.aborted)return;e.addEventListener("abort",o,{once:!0})}try{for(;;){if(i)return;let u;try{u=await n.read()}catch(f){if(i||f instanceof Error&&f.name==="AbortError")return;throw f}let{done:d,value:l}=u;if(d)break;for(let f of s.decode(l)){let g=t.decode(f);g&&(yield g)}}for(let u of s.flush()){let d=t.decode(u);d&&(yield d)}let c=t.flush();c&&(yield c)}finally{e&&e.removeEventListener("abort",o);try{n.releaseLock()}catch{}}}a(ct,"iterSSEEvents");function Zt(r,e){let t=e?{requestId:e}:{};try{let s=JSON.parse(r);if(s&&typeof s=="object"){let n=s.error??s;if(n&&typeof n=="object")return new x({message:typeof n.message=="string"?n.message:"Stream error",type:typeof n.type=="string"?n.type:"server_error",param:n.param===void 0?null:n.param,code:n.code===void 0?null:n.code},t)}}catch{}return new x({message:r||"Stream error",type:"server_error",param:null,code:null},t)}a(Zt,"extractSSEError");var pe=class{static{a(this,"ChatCompletionsAPI")}baseUrl;fetch;constructor(e,t){this.baseUrl=e,this.fetch=t}create(e){if(e.stream!==!0)throw new x({message:"stream must be true; non-streaming chat completions are not supported",type:"invalid_request_error",param:"stream",code:"request_stream_required"});return this.createStreaming(e)}async*createStreaming(e){let{signal:t,conversationId:s,...n}=e;n.stream=!0;let i;try{i=await this.fetch(`${this.baseUrl}/chat/completions`,{method:"POST",headers:{Accept:"text/event-stream","Content-Type":"application/json",...s!==void 0?{"X-Conversation-ID":s}:{}},body:JSON.stringify(n),signal:t})}catch(d){if(d instanceof Error&&d.name==="AbortError")return;throw new x({message:`Network error: ${d?.message??"unknown"}`,type:"server_error",param:null,code:"gateway_network_error"},{cause:d})}if(!i.ok)throw await Ae(i);if(!i.body)throw new x({message:"Response body is empty \u2014 streaming not supported",type:"server_error",param:null,code:"gateway_invalid_response"},{requestId:i.headers.get("x-request-id")??void 0});let o=i.headers.get("x-request-id")??void 0,c=!1,u=!1;try{for await(let d of ct(i.body,t)){if(d.event==="error")throw u=!0,Zt(d.data,o);if(d.event===null||d.event===""){if(d.data===at){c=!0;return}if(!d.data)continue;let l;try{l=JSON.parse(d.data)}catch{throw u=!0,new x({message:`Failed to parse SSE data: ${d.data}`,type:"server_error",param:null,code:"gateway_invalid_response"},{requestId:o})}if(l&&typeof l=="object"&&"error"in l){u=!0;let f=l.error;throw new x({message:typeof f?.message=="string"?f.message:"Stream error",type:typeof f?.type=="string"?f.type:"server_error",param:f?.param===void 0?null:f.param,code:f?.code===void 0?null:f.code},{requestId:o})}yield l}}}catch(d){if(d instanceof Error&&d.name==="AbortError")return;throw u=!0,d}if(!c&&!u&&!t?.aborted)throw new x({message:"\u6D41\u5F0F\u54CD\u5E94\u4E2D\u65AD\u3002",type:"server_error",param:null,code:"gateway_stream_interrupted"},{requestId:o})}};var M=class{static{a(this,"LlmModule")}fetch;baseUrl;models;chat;constructor(e,t){this.fetch=t,this.baseUrl=`${e.endpoint}${R.llm}`,this.models=new he(this.baseUrl,this.fetch),this.chat={completions:new pe(this.baseUrl,this.fetch)}}};var F=class extends Error{static{a(this,"StorageError")}__isStorageError=!0;namespace;status;statusCode;constructor(e,t="storage",s,n){super(e),this.namespace=t,this.name=t==="vectors"?"StorageVectorsError":"StorageError",this.status=s,this.statusCode=n}toJSON(){return{name:this.name,message:this.message,status:this.status,statusCode:this.statusCode}}};function U(r){return typeof r=="object"&&r!==null&&"__isStorageError"in r}a(U,"isStorageError");var C=class extends F{static{a(this,"StorageApiError")}status;statusCode;code;constructor(e,t,s,n="storage",i){super(e,n,t,s),this.name=n==="vectors"?"StorageVectorsApiError":"StorageApiError",this.status=t,this.statusCode=s,this.code=i}toJSON(){return{...super.toJSON(),code:this.code}}},q=class extends F{static{a(this,"StorageUnknownError")}originalError;constructor(e,t,s="storage"){super(e,s),this.name=s==="vectors"?"StorageVectorsUnknownError":"StorageUnknownError",this.originalError=t}};function L(r,e,t){let s={...r},n=e.toLowerCase();for(let i of Object.keys(s))i.toLowerCase()===n&&delete s[i];return s[n]=t,s}a(L,"setHeader");function ut(r){let e={};for(let[t,s]of Object.entries(r))e[t.toLowerCase()]=s;return e}a(ut,"normalizeHeaders");var dt=a(r=>r?(...e)=>r(...e):(...e)=>fetch(...e),"resolveFetch");var lt=a(r=>{if(typeof r!="object"||r===null)return!1;let e=Object.getPrototypeOf(r);return(e===null||e===Object.prototype||Object.getPrototypeOf(e)===null)&&!(Symbol.toStringTag in r)&&!(Symbol.iterator in r)},"isPlainObject"),me=a(r=>{if(Array.isArray(r))return r.map(t=>me(t));if(typeof r=="function"||r!==Object(r))return r;let e={};return Object.entries(r).forEach(([t,s])=>{let n=t.replace(/([-_][a-z])/gi,i=>i.toUpperCase().replace(/[-_]/g,""));e[n]=me(s)}),e},"recursiveToCamel");var ht=a(r=>r.split("/").map(encodeURIComponent).join("/"),"encodeStoragePath");var ft=a(r=>{if(typeof r=="object"&&r!==null){let e=r;if(typeof e.msg=="string")return e.msg;if(typeof e.message=="string")return e.message;if(typeof e.error_description=="string")return e.error_description;if(typeof e.error=="string")return e.error;if(typeof e.error=="object"&&e.error!==null){let t=e.error;if(typeof t.message=="string")return t.message}}return JSON.stringify(r)},"_getErrorMessage"),er=a(async(r,e,t,s)=>{if(r!==null&&typeof r=="object"&&"json"in r&&typeof r.json=="function"){let i=r,o=parseInt(String(i.status),10);Number.isFinite(o)||(o=500),i.json().then(c=>{let u=c?.statusCode||c?.code||o+"";e(new C(ft(c),o,u,s,c?.code))}).catch(()=>{let c=o+"",u=i.statusText||`HTTP ${o} error`;e(new C(u,o,c,s))})}else e(new q(ft(r),r,s))},"handleError"),tr=a((r,e,t,s)=>{let n={method:r,headers:e?.headers||{}};if(r==="GET"||r==="HEAD"||!s)return{...n,...t};if(lt(s)){let i=e?.headers||{},o;for(let[c,u]of Object.entries(i))c.toLowerCase()==="content-type"&&(o=u);n.headers=L(i,"Content-Type",o??"application/json"),n.body=JSON.stringify(s)}else n.body=s;return e?.duplex&&(n.duplex=e.duplex),{...n,...t}},"_getRequestParams");async function Y(r,e,t,s,n,i,o){return new Promise((c,u)=>{r(t,tr(e,s,n,i)).then(d=>{if(!d.ok)throw d;if(s?.noResolveJson)return d;if(o==="vectors"){let l=d.headers.get("content-type");if(d.headers.get("content-length")==="0"||d.status===204)return{};if(!l||!l.includes("application/json"))return{}}return d.json()}).then(d=>c(d)).catch(d=>er(d,u,s,o))})}a(Y,"_handleRequest");function pt(r="storage"){return{get:a(async(e,t,s,n)=>Y(e,"GET",t,s,n,void 0,r),"get"),post:a(async(e,t,s,n,i)=>Y(e,"POST",t,n,i,s,r),"post"),put:a(async(e,t,s,n,i)=>Y(e,"PUT",t,n,i,s,r),"put"),head:a(async(e,t,s,n)=>Y(e,"HEAD",t,{...s,noResolveJson:!0},n,void 0,r),"head"),remove:a(async(e,t,s,n,i)=>Y(e,"DELETE",t,n,i,s,r),"remove")}}a(pt,"createFetchApi");var rr=pt("storage"),{get:Re,post:$,put:$e,head:mt,remove:Ue}=rr,Ms=pt("vectors");var X=class{static{a(this,"BaseApiClient")}url;headers;fetch;shouldThrowOnError=!1;namespace;constructor(e,t={},s,n="storage"){this.url=e,this.headers=ut(t),this.fetch=dt(s),this.namespace=n}throwOnError(){return this.shouldThrowOnError=!0,this}setHeader(e,t){return this.headers=L(this.headers,e,t),this}async handleOperation(e){try{return{data:await e(),error:null}}catch(t){if(this.shouldThrowOnError)throw t;if(U(t))return{data:null,error:t};throw t}}};var Q=class{static{a(this,"StreamDownloadBuilder")}downloadFn;shouldThrowOnError;[Symbol.toStringTag]="StreamDownloadBuilder";promise=null;constructor(e,t){this.downloadFn=e,this.shouldThrowOnError=t}then(e,t){return this.getPromise().then(e,t)}catch(e){return this.getPromise().catch(e)}finally(e){return this.getPromise().finally(e)}getPromise(){return this.promise||(this.promise=this.execute()),this.promise}async execute(){try{return{data:(await this.downloadFn()).body,error:null}}catch(e){if(this.shouldThrowOnError)throw e;if(U(e))return{data:null,error:e};throw e}}};var Z=class{static{a(this,"BlobDownloadBuilder")}downloadFn;shouldThrowOnError;[Symbol.toStringTag]="BlobDownloadBuilder";promise=null;constructor(e,t){this.downloadFn=e,this.shouldThrowOnError=t}asStream(){return new Q(this.downloadFn,this.shouldThrowOnError)}then(e,t){return this.getPromise().then(e,t)}catch(e){return this.getPromise().catch(e)}finally(e){return this.getPromise().finally(e)}getPromise(){return this.promise||(this.promise=this.execute()),this.promise}async execute(){try{return{data:await(await this.downloadFn()).blob(),error:null}}catch(e){if(this.shouldThrowOnError)throw e;if(U(e))return{data:null,error:e};throw e}}};var Ie={limit:100,offset:0,sortBy:{column:"name",order:"asc"}},gt={cacheControl:"3600",contentType:"text/plain;charset=UTF-8",upsert:!1},ee=class extends X{static{a(this,"StorageFileApi")}bucketId;constructor(e,t={},s,n){super(e,t,n,"storage"),this.bucketId=s}async uploadOrUpdate(e,t,s,n){return this.handleOperation(async()=>{let i,o={...gt,...n},c={...this.headers,...e==="POST"&&{"x-upsert":String(o.upsert)}},u=o.metadata;if(typeof Blob<"u"&&s instanceof Blob?(i=new FormData,i.append("cacheControl",o.cacheControl),u&&i.append("metadata",this.encodeMetadata(u)),i.append("",s)):typeof FormData<"u"&&s instanceof FormData?(i=s,i.has("cacheControl")||i.append("cacheControl",o.cacheControl),u&&!i.has("metadata")&&i.append("metadata",this.encodeMetadata(u))):(i=s,c["cache-control"]=`max-age=${o.cacheControl}`,c["content-type"]=o.contentType,u&&(c["x-metadata"]=this.toBase64(this.encodeMetadata(u))),(typeof ReadableStream<"u"&&i instanceof ReadableStream||i&&typeof i=="object"&&"pipe"in i&&typeof i.pipe=="function")&&!o.duplex&&(o.duplex="half")),n?.headers)for(let[g,y]of Object.entries(n.headers))c=L(c,g,y);let d=this._removeEmptyFolders(t),l=this._getFinalPath(d),f=await(e=="PUT"?$e:$)(this.fetch,`${this.url}/object/${l}`,i,{headers:c,...o?.duplex?{duplex:o.duplex}:{}});return{path:d,id:f.Id,fullPath:f.Key}})}async upload(e,t,s){return this.uploadOrUpdate("POST",e,t,s)}async uploadToSignedUrl(e,t,s,n){let i=this._removeEmptyFolders(e),o=this._getFinalPath(i),c=new URL(this.url+`/object/upload/sign/${o}`);return c.searchParams.set("token",t),this.handleOperation(async()=>{let u,d={...gt,...n},l={...this.headers,"x-upsert":String(d.upsert)},f=d.metadata;if(typeof Blob<"u"&&s instanceof Blob?(u=new FormData,u.append("cacheControl",d.cacheControl),f&&u.append("metadata",this.encodeMetadata(f)),u.append("",s)):typeof FormData<"u"&&s instanceof FormData?(u=s,u.has("cacheControl")||u.append("cacheControl",d.cacheControl),f&&!u.has("metadata")&&u.append("metadata",this.encodeMetadata(f))):(u=s,l["cache-control"]=`max-age=${d.cacheControl}`,l["content-type"]=d.contentType,f&&(l["x-metadata"]=this.toBase64(this.encodeMetadata(f))),(typeof ReadableStream<"u"&&u instanceof ReadableStream||u&&typeof u=="object"&&"pipe"in u&&typeof u.pipe=="function")&&!d.duplex&&(d.duplex="half")),n?.headers)for(let[y,ne]of Object.entries(n.headers))l=L(l,y,ne);let g=await $e(this.fetch,c.toString(),u,{headers:l,...d?.duplex?{duplex:d.duplex}:{}});return{path:i,fullPath:g.Key}})}async createSignedUploadUrl(e,t){return this.handleOperation(async()=>{let s=this._getFinalPath(e),n={...this.headers};t?.upsert&&(n["x-upsert"]="true");let i=await $(this.fetch,`${this.url}/object/upload/sign/${s}`,{},{headers:n}),o=new URL(this.url+i.url),c=o.searchParams.get("token");if(!c)throw new F("No token returned by API");return{signedUrl:o.toString(),path:e,token:c}})}async update(e,t,s){return this.uploadOrUpdate("PUT",e,t,s)}async move(e,t,s){return this.handleOperation(async()=>await $(this.fetch,`${this.url}/object/move`,{bucketId:this.bucketId,sourceKey:e,destinationKey:t,destinationBucket:s?.destinationBucket},{headers:this.headers}))}async copy(e,t,s){return this.handleOperation(async()=>({path:(await $(this.fetch,`${this.url}/object/copy`,{bucketId:this.bucketId,sourceKey:e,destinationKey:t,destinationBucket:s?.destinationBucket},{headers:this.headers})).Key}))}async createSignedUrl(e,t,s){return this.handleOperation(async()=>{let n=this._getFinalPath(e),i=typeof s?.transform=="object"&&s.transform!==null&&Object.keys(s.transform).length>0,o=await $(this.fetch,`${this.url}/object/sign/${n}`,{expiresIn:t,...i?{transform:s.transform}:{}},{headers:this.headers}),c=new URLSearchParams;s?.download&&c.set("download",s.download===!0?"":s.download),s?.cacheNonce!=null&&c.set("cacheNonce",String(s.cacheNonce));let u=c.toString();return{signedUrl:encodeURI(`${this.url}${o.signedURL}${u?`&${u}`:""}`)}})}async createSignedUrls(e,t,s){return this.handleOperation(async()=>{let n=await $(this.fetch,`${this.url}/object/sign/${this.bucketId}`,{expiresIn:t,paths:e},{headers:this.headers}),i=new URLSearchParams;s?.download&&i.set("download",s.download===!0?"":s.download),s?.cacheNonce!=null&&i.set("cacheNonce",String(s.cacheNonce));let o=i.toString();return n.map(c=>({...c,signedUrl:c.signedURL?encodeURI(`${this.url}${c.signedURL}${o?`&${o}`:""}`):null}))})}download(e,t,s){let i=typeof t?.transform=="object"&&t.transform!==null&&Object.keys(t.transform).length>0?"render/image/authenticated":"object",o=new URLSearchParams;t?.transform&&this.applyTransformOptsToQuery(o,t.transform),t?.cacheNonce!=null&&o.set("cacheNonce",String(t.cacheNonce));let c=o.toString(),u=this._getFinalPath(e),d=a(()=>Re(this.fetch,`${this.url}/${i}/${u}${c?`?${c}`:""}`,{headers:this.headers,noResolveJson:!0},s),"downloadFn");return new Z(d,this.shouldThrowOnError)}async info(e){let t=this._getFinalPath(e);return this.handleOperation(async()=>{let s=await Re(this.fetch,`${this.url}/object/info/${t}`,{headers:this.headers});return me(s)})}async exists(e){let t=this._getFinalPath(e);try{return await mt(this.fetch,`${this.url}/object/${t}`,{headers:this.headers}),{data:!0,error:null}}catch(s){if(this.shouldThrowOnError)throw s;if(U(s)){let n=s instanceof C?s.status:s instanceof q?s.originalError?.status:void 0;if(n!==void 0&&[400,404].includes(n))return{data:!1,error:s}}throw s}}getPublicUrl(e,t){let s=this._getFinalPath(e),n=new URLSearchParams;t?.download&&n.set("download",t.download===!0?"":t.download),t?.transform&&this.applyTransformOptsToQuery(n,t.transform),t?.cacheNonce!=null&&n.set("cacheNonce",String(t.cacheNonce));let i=n.toString(),c=typeof t?.transform=="object"&&t.transform!==null&&Object.keys(t.transform).length>0?"render/image":"object";return{data:{publicUrl:encodeURI(`${this.url}/${c}/public/${s}`)+(i?`?${i}`:"")}}}async remove(e){return this.handleOperation(async()=>await Ue(this.fetch,`${this.url}/object/${this.bucketId}`,{prefixes:e},{headers:this.headers}))}async purgeCache(e,t,s){return this.handleOperation(async()=>{let n=ht(this._getFinalPath(e)),i=new URLSearchParams;t?.transformations&&i.set("transformations","true");let o=i.toString();return await Ue(this.fetch,`${this.url}/cdn/${n}${o?`?${o}`:""}`,{},{headers:this.headers},s)})}async list(e,t,s){return this.handleOperation(async()=>{let n=t?.sortBy?{...Ie.sortBy,...t.sortBy}:Ie.sortBy,i={...Ie,...t,sortBy:n,prefix:e||""};return await $(this.fetch,`${this.url}/object/list/${this.bucketId}`,i,{headers:this.headers},s)})}async listV2(e,t){return this.handleOperation(async()=>{let s={...e};return await $(this.fetch,`${this.url}/object/list-v2/${this.bucketId}`,s,{headers:this.headers},t)})}encodeMetadata(e){return JSON.stringify(e)}toBase64(e){return typeof Buffer<"u"?Buffer.from(e).toString("base64"):btoa(e)}_getFinalPath(e){return`${this.bucketId}/${e.replace(/^\/+/,"")}`}_removeEmptyFolders(e){return e.replace(/^\/|\/$/g,"").replace(/\/+/g,"/")}applyTransformOptsToQuery(e,t){return t.width&&e.set("width",t.width.toString()),t.height&&e.set("height",t.height.toString()),t.resize&&e.set("resize",t.resize),t.format&&e.set("format",t.format),t.quality&&e.set("quality",t.quality.toString()),e}};var yt="2.112.3";var bt={"X-Client-Info":`storage-js/${yt}`};var W="runtime",ge=600,ye=3600,w=class extends Error{static{a(this,"CloudStoragePathError")}constructor(e){super(e),this.name="CloudStoragePathError"}},te=class{static{a(this,"WorkBuddyStorageDownload")}blob;stream;[Symbol.toStringTag]="WorkBuddyStorageDownload";constructor(e,t){this.blob=e,this.stream=t}asStream(){return this.stream()}then(e,t){return this.blob().then(e,t)}catch(e){return this.blob().catch(e)}finally(e){return this.blob().finally(e)}},H=class{static{a(this,"WorkBuddyStorageBucket")}fileApi;constructor(e){this.fileApi=e}upload(e,t,s){return _(this.fileApi.upload(v(e),t,s))}update(e,t,s){return _(this.fileApi.update(v(e),t,s))}list(e="",t){return _(this.fileApi.list(St(e),t))}listPage(e){return _(this.fileApi.listV2({...e,prefix:St(e?.prefix??"")}))}info(e){return _(this.fileApi.info(v(e)))}async exists(e){let t=await this.fileApi.exists(v(e));return t.error?{data:null,error:Et(t.error)}:{data:t.data,error:null}}download(e){let t=this.fileApi.download(v(e));return new te(()=>_(t),()=>_(t.asStream()))}remove(e){if(e.length===0)throw new w("remove requires at least one object path.");return _(this.fileApi.remove(e.map(v)))}copy(e,t){return _(this.fileApi.copy(v(e),v(t)))}move(e,t){return _(this.fileApi.move(v(e),v(t)))}createSignedUrl(e,t=ge){return _(this.fileApi.createSignedUrl(v(e),kt(t)))}createSignedUrls(e,t=ge){if(e.length===0)throw new w("createSignedUrls requires at least one object path.");return _(this.fileApi.createSignedUrls(e.map(v),kt(t)))}createSignedUploadUrl(e,t){return _(this.fileApi.createSignedUploadUrl(v(e),{upsert:t?.upsert??!1}))}uploadToSignedUrl(e,t,s,n){if(!t)throw new w("signed upload token is required.");return _(this.fileApi.uploadToSignedUrl(v(e),t,s,n))}},re=class extends H{static{a(this,"WorkBuddyStorageModule")}runtime;constructor(e){let s=e.from(W);super(s),this.runtime=new H(s)}from(e=W){if(e!==W)throw new w(`Only the "${W}" storage bucket is available.`);return this.runtime}userPath(e,t){return wt("users",e,t)}sharedPath(e,t){return wt("shared",e,t)}};function xt(r,e){let t={from:a(s=>new ee(`${r.endpoint}${R.storage}`,bt,s,e),"from")};return new re(t)}a(xt,"createStorageModule");function wt(r,e,t){let s=sr(e,"owner/user id"),n=Ce(t,!1);return v(`${r}/${s}/${n}`)}a(wt,"scopedPath");function v(r){let e=Ce(r,!1);if(!e.includes("/"))throw new w("Object paths must use users/<uid>/... or shared/<ownerUid>/....");let[t,s,...n]=e.split("/");if(t!=="users"&&t!=="shared"||!s||n.length===0)throw new w("Object paths must use users/<uid>/... or shared/<ownerUid>/....");return e}a(v,"validateObjectPath");function St(r){if(r==="")return"";let e=Ce(r,!0),[t,s]=e.split("/");if(t==="shared"&&!s)return"shared";if(t!=="users"&&t!=="shared"||!s)throw new w("List prefixes must start with users/<uid> or shared/<ownerUid>.");return e}a(St,"validateObjectPrefix");function Ce(r,e){if(typeof r!="string"||r.trim()==="")throw new w("Storage path must be a non-empty relative path.");let t=r.trim();for(let i=0;i<3;i+=1)try{let o=decodeURIComponent(t);if(o===t)break;t=o}catch{throw new w("Storage path contains invalid URL encoding.")}if(t.startsWith("/")||t.includes("\\")||t.includes("\0")||t.includes("//")||!e&&t.endsWith("/"))throw new w("Storage path is not a safe relative object path.");let s=e?t.replace(/\/+$/,""):t;if(s.split("/").some(i=>i===""||i==="."||i===".."))throw new w("Storage path traversal is not allowed.");return s}a(Ce,"validatePath");function sr(r,e){if(!r)throw new w(`${e} is not a valid storage path segment.`);let t=r;for(let s=0;s<3;s+=1)try{let n=decodeURIComponent(t);if(n===t)break;t=n}catch{throw new w(`${e} contains invalid URL encoding.`)}if(t.includes("/")||t.includes("\\")||t.includes("\0")||t==="."||t==="..")throw new w(`${e} is not a valid storage path segment.`);return t}a(sr,"validatePathSegment");function kt(r){if(!Number.isInteger(r)||r<=0||r>ye)throw new w(`Signed URL expiry must be an integer between 1 and ${ye} seconds.`);return r}a(kt,"validateSignedURLTTL");async function _(r){let e=await r;return e.error?{data:null,error:Et(e.error)}:e.data===null?{data:null,error:{name:"CloudStorageResponseError",message:"Storage API returned neither data nor an error."}}:{data:e.data,error:null}}a(_,"mapStorageResult");function Et(r){if(r instanceof Error){let e=r;return{name:e.name,message:e.message,status:e.status,statusCode:e.statusCode,code:e.code,cause:r}}return{name:"CloudStorageError",message:String(r),cause:r}}a(Et,"normalizeStorageError");var se=class{static{a(this,"WorkBuddyCloudClient")}config;database;auth;storage;llm;constructor(e,t={}){this.config=e,this.auth=new D(e,we(e,oe),{storage:t.storage,workBuddyMiniProgram:t.workBuddyMiniProgram});let s=we(e,()=>this.auth.getAccessToken());this.database=et(e,s),this.storage=xt(e,s),this.llm=new M(e,s)}get endpoint(){return this.config.endpoint}get oauthRelayBaseUrl(){return this.config.oauthRelayBaseUrl}};function vt(r){return new se(je(r),{storage:r.storage})}a(vt,"createWorkBuddyCloud");function Pt(r){return r.kind==="unauthenticated"||r.code==="invalid_grant"}a(Pt,"shouldClearCredentials");return $t(nr);})();
 
 </script>
-<script>window.__OPS_CFG__={"dataBase":"data/","pollSeconds":60,"editSha":"232357b8a85e05f0ff657f3a255089698d44a7d85a51e98234d1ab18972c524c","editHint":"团队编辑码向项目管理员索取；只读预览无需任何码","connectors":{"dingtalk":{"pluginId":"dingtalk@workbuddy-connector-plugins-official","name":"钉钉","scope":"project","use":"商品分组绑定、审批、群通知"},"tmeet":{"pluginId":"tmeet@workbuddy-connector-plugins-official","name":"腾讯会议","scope":"project","use":"周会与复盘"}},"version":"v6.1"};window.__WB_CFG__={"endpoint":"https://ai-ops-workbench-43332.app.workbuddy.host","oauthRelayBaseUrl":"https://www.workbuddy.cn/v2/as/genie-baas/oauth","publishableKey":"wbpk_6H4ne4Pivj47cmkaQcnAzt_7jKCp89XzvWRs5ECfR4aMtEBaeS38dez"};</script>
+<script>window.__OPS_CFG__={"dataBase":"data/","pollSeconds":60,"editSha":"232357b8a85e05f0ff657f3a255089698d44a7d85a51e98234d1ab18972c524c","editHint":"登录后即为成员编辑；右上角徽标可切换只读","connectors":{"dingtalk":{"pluginId":"dingtalk@workbuddy-connector-plugins-official","name":"钉钉","scope":"project","use":"商品分组绑定、审批、群通知"},"tmeet":{"pluginId":"tmeet@workbuddy-connector-plugins-official","name":"腾讯会议","scope":"project","use":"周会与复盘"}},"version":"v6.2"};window.__WB_CFG__={"endpoint":"https://ai-ops-workbench-43332.app.workbuddy.host","oauthRelayBaseUrl":"https://www.workbuddy.cn/v2/as/genie-baas/oauth","publishableKey":"wbpk_6H4ne4Pivj47cmkaQcnAzt_7jKCp89XzvWRs5ECfR4aMtEBaeS38dez"};</script>
 <script>
 (function () {
 "use strict";
@@ -2189,6 +2189,12 @@ function denyWrite() {
 /* 「我是谁」：记在本机、不进云端；写库时带上改动人，方便追溯是谁改的。
    打开即用，不需要登录，名字只用于标记。 */
 function myName() {
+  /* 登录后优先用账号名；没登录才有本机记名 */
+  try {
+    const u = store.session && store.session.user;
+    const n = u && (u.name || u.email || u.phone);
+    if (n) return String(n);
+  } catch (e) {}
   try {
     const n = localStorage.getItem(LS_ME);
     if (n) return n;
@@ -4004,24 +4010,153 @@ try { const s = localStorage.getItem('sb-theme'); setTheme(s || "light"); } catc
 
 /* =========================================================
 
-   启动：打开即用 + 团队云端自动同步
-   不再有登录门禁：链接发给谁，谁打开就能用；
-   「我是谁」只记在本机，写库时带上名字，方便追溯是谁改的。
+   启动：登录门禁 + 团队云端同步
+   应用跑在 WorkBuddy 域名上（与云端接口同源）；登录后才能读写团队数据。
+   登录 = 成员身份，直接进入编辑模式；未登录看不到任何数据。
    ========================================================= */
 const auth = {
   session: null,
-  /* 不登录，身份就是一个本机名字 */
+  /* 先处理 OAuth 回调，再走普通会话恢复 */
   async restore() {
-    this.session = { user: { name: myName() } };
+    if (!cloud) {
+      /* 无云配置（本地测试桩）：本机模式，身份用本机记名 */
+      this.session = { user: { name: myName() } };
+      return this.session;
+    }
+    try {
+      const url = new URL(location.href);
+      const hasCb = url.searchParams.has('code') || url.searchParams.has('error');
+      if (hasCb) {
+        const prov = url.searchParams.get('provider');
+        const all = [
+          ['workbuddy', cloud.auth.handleWorkBuddyCallback],
+          ['wechat', cloud.auth.handleWechatWebCallback]
+        ].filter(x => typeof x[1] === 'function');
+        const order = prov === 'wechat' ? all.slice().reverse() : all;
+        let cbErr = null;
+        for (const [, fn] of order) {
+          try {
+            const r = await fn.call(cloud.auth);
+            if (r && r.data) {
+              ['code', 'state', 'provider', 'error', 'provider_id'].forEach(k => url.searchParams.delete(k));
+              history.replaceState(null, '', url.pathname + url.search + url.hash);
+              this.session = r.data;
+              return r.data;
+            }
+            if (r && r.error && r.error.message) cbErr = r.error;
+          } catch (e) { cbErr = cbErr || { message: e && e.message }; }
+        }
+        if (cbErr) toast('登录失败：' + cbErr.message, 'bad');
+      }
+      const s = await cloud.auth.getSession();
+      this.session = (s && s.data) || null;
+    } catch (e) { this.session = null; }
     return this.session;
   },
-  rename(n) {
-    const v = setMyName(n);
-    this.session = { user: { name: v } };
-    setUserCard();
-    return v;
+  async logout() {
+    try { await cloud.auth.signOut(); } catch (e) {}
+    this.session = null;
+    try { localStorage.removeItem(LS_EDIT); } catch (e) {}
+    location.reload();
   }
 };
+
+function gateMsg(t, bad) {
+  const el = $('#gateMsg');
+  if (!el) return;
+  el.className = 'gate-msg' + (bad ? ' bad' : '');
+  el.textContent = t;
+}
+
+let pendingOtp = null;
+function showGate() {
+  if ($('#gate')) return;
+  /* GitHub Pages 镜像上云端接口跨域不可用，直接指回正式链接 */
+  if (/github\.io$/i.test(location.hostname)) {
+    const el = document.createElement('div');
+    el.id = 'gate';
+    el.className = 'gate';
+    el.innerHTML = `<div class="gate-card">
+      <div class="gate-brand"><span class="gate-logo" aria-hidden="true">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1.8 10.6l2.5-3.8 2.4 2.3 2.4-5.2 2.2 3.5 2.9-2.2"/></svg></span>
+        <span><b>AI运营组工作台</b><i>AI OPS WORKBENCH</i></span></div>
+      <p class="gate-sub">这里是源码镜像站，团队数据只在正式站上。请从正式链接进入：</p>
+      <p style="font-size:13px;line-height:1.8;word-break:break-all"><a href="https://ai-ops-workbench-43332.app.workbuddy.host/" style="color:var(--amber)">https://ai-ops-workbench-43332.app.workbuddy.host/</a></p>
+      <div class="gate-foot">源码与协作规范见本仓库 README。</div>
+    </div>`;
+    document.body.appendChild(el);
+    return;
+  }
+  const el = document.createElement('div');
+  el.id = 'gate';
+  el.className = 'gate';
+  el.innerHTML = `
+    <div class="gate-card">
+      <div class="gate-brand">
+        <span class="gate-logo" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1.8 10.6l2.5-3.8 2.4 2.3 2.4-5.2 2.2 3.5 2.9-2.2"/></svg>
+        </span>
+        <span><b>AI运营组工作台</b><i>AI OPS WORKBENCH</i></span>
+      </div>
+      <p class="gate-sub">组内共用同一份数据。登录后，店铺、账号、指标、任务改一处，所有人下次打开都能看到。</p>
+
+      <button class="btn primary gate-wb" id="gateWb" type="button">使用 WorkBuddy 登录</button>
+
+      <div class="gate-or"><i></i><span>或使用邮箱验证码</span><i></i></div>
+
+      <div class="gate-row">
+        <input id="gateEmail" type="email" placeholder="邮箱地址" autocomplete="email" spellcheck="false" />
+        <button class="btn" id="gateSend" type="button">获取验证码</button>
+      </div>
+      <div class="gate-row">
+        <input id="gateCode" inputmode="numeric" placeholder="邮箱收到的验证码" autocomplete="one-time-code" />
+        <button class="btn primary" id="gateLogin" type="button">登录</button>
+      </div>
+
+      <div class="gate-msg" id="gateMsg"></div>
+      <div class="gate-foot">数据保存在团队云端，仅登录成员可读写。</div>
+    </div>`;
+  document.body.appendChild(el);
+
+  $('#gateWb').addEventListener('click', async () => {
+    gateMsg('正在跳转授权…');
+    const back = new URL(location.href);
+    back.pathname = back.pathname.replace(/\/[^/]*$/, '/');
+    ['code', 'state', 'provider', 'error'].forEach(k => back.searchParams.delete(k));
+    const r = await cloud.auth.signInWithOAuth({ provider: 'workbuddy', redirectTo: back.toString() });
+    if (r.error) { gateMsg(r.error.message, true); return; }
+    location.assign(r.data.url);
+  });
+
+  $('#gateSend').addEventListener('click', async () => {
+    const email = $('#gateEmail').value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { gateMsg('请输入正确的邮箱地址', true); return; }
+    const btn = $('#gateSend');
+    btn.disabled = true; btn.textContent = '发送中…';
+    const r = await cloud.auth.sendOtp({ email: email });
+    btn.disabled = false; btn.textContent = '重新获取';
+    if (r.error) { gateMsg(r.error.message, true); return; }
+    pendingOtp = { email: email, verificationId: r.data.verificationId, isExistingUser: r.data.isExistingUser };
+    gateMsg('验证码已发送，请查收邮箱');
+    const c = $('#gateCode'); if (c) c.focus();
+  });
+
+  $('#gateLogin').addEventListener('click', async () => {
+    const code = $('#gateCode').value.trim();
+    if (!pendingOtp) { gateMsg('请先获取验证码', true); return; }
+    if (!code) { gateMsg('请输入邮箱收到的验证码', true); return; }
+    const btn = $('#gateLogin');
+    btn.disabled = true; btn.textContent = '登录中…';
+    const r = await cloud.auth.verifyOtp({
+      email: pendingOtp.email, verificationId: pendingOtp.verificationId,
+      isExistingUser: pendingOtp.isExistingUser, token: code
+    });
+    btn.disabled = false; btn.textContent = '登录';
+    if (r.error) { gateMsg(r.error.message, true); return; }
+    pendingOtp = null;
+    enterApp(r.data);
+  });
+}
 
 function showLoading(text) {
   let el = $('#boot');
@@ -4042,7 +4177,7 @@ function showFatal(text) {
 }
 function hideLoading() { const el = $('#boot'); if (el) el.remove(); }
 
-/* 侧栏底部的「我」：名字 + 云端状态 */
+/* 侧栏底部的「我」：名字（账号名优先）+ 云端状态 */
 function setUserCard() {
   const name = myName();
   const av = $('#uAv'), nm = $('#uName'), rl = $('#uRole');
@@ -4053,26 +4188,6 @@ function setUserCard() {
       ? '本机模式'
       : (store.cloudErr ? '未连云端 · 存本机' : '云端已同步');
   }
-}
-
-/* 填名字：只影响标记，不影响权限 */
-function askName() {
-  const cur = myName();
-  openModal({
-    title: '我是谁',
-    body: `<div style="font-size:12.5px;line-height:1.8;color:var(--ink2);margin-bottom:10px">填个名字，你改的店铺、账号、指标、任务会记上这个名字，组里一眼看出是谁动的。名字只存在你这台设备上，不会上传。</div>
-      <input id="meInp" maxlength="12" placeholder="例如：王涛" value="${esc(cur === '组内成员' ? '' : cur)}"
-        style="width:100%;height:34px;padding:0 10px;border:1px solid var(--line2);border-radius:8px;background:var(--card);color:var(--ink);font-size:13px;outline:none" />`,
-    buttons: [
-      { label: '取消', cls: 'ghost' },
-      { label: '保存', cls: 'primary', fn: c => {
-        const v = auth.rename(($('#meInp') || {}).value);
-        c();
-        toast('已记住：' + v, 'ok');
-      } }
-    ]
-  });
-  setTimeout(() => { const i = $('#meInp'); if (i) { i.focus(); i.select(); } }, 160);
 }
 
 /* 拉取同事的最新改动：无弹窗、无正在编辑的输入、无待写入时才做，避免冲掉手上的内容 */
@@ -4098,7 +4213,7 @@ async function pullLatest(silent) {
   return true;
 }
 
-/* 云端未就绪时的常驻提示条（最常见：云端暂不可达） */
+/* 云端未就绪时的常驻提示条 */
 function cloudNotice(msg, retry) {
   let el = document.getElementById('cloudNotice');
   if (!el) {
@@ -4117,7 +4232,7 @@ function cloudNotice(msg, retry) {
   if (retry) {
     const b = document.createElement('button');
     b.className = 'btn';
-    b.textContent = '已建好，重试';
+    b.textContent = '重试';
     b.style.cssText = 'height:26px;padding:0 10px;font-size:12px;white-space:nowrap';
     b.addEventListener('click', retry);
     el.appendChild(b);
@@ -4128,7 +4243,7 @@ function hideCloudNotice() {
   const el = document.getElementById('cloudNotice');
   if (el) el.remove();
 }
-/* 按当前错误状态决定提示内容：建表类问题给「重试」，网络问题只告知 */
+/* 按当前错误状态决定提示内容：表结构问题给「重试」，网络问题只告知 */
 function syncNotice() {
   if (!store.cloudErr) { hideCloudNotice(); return; }
   const needSql = /PGRST205|42P01|Could not find the table|schema cache/i.test(store.cloudErr);
@@ -4149,9 +4264,12 @@ async function retryCloud() {
   else toast('云端已接通，团队数据已同步', 'ok');
 }
 
-/* 同步数据 → 起界面。云端挂了也照常进，先跑本机缓存 */
-async function enterApp() {
-  store.session = auth.session;
+/* 登录成功后：解锁编辑 → 同步数据 → 起界面 */
+async function enterApp(session) {
+  if (!session) return;
+  store.session = session;
+  setEditMode(true, true);   /* 登录 = 成员，直接可编辑 */
+  const g = $('#gate'); if (g) g.remove();
   showLoading('正在同步团队数据…');
   let r = null;
   try { r = await store.hydrate(); }
@@ -4188,7 +4306,13 @@ function startApp() {
   }
 
   const out = $('#uOut');
-  if (out) out.addEventListener('click', () => askName());
+  if (out) out.addEventListener('click', () => {
+    openModal({
+      title: '退出登录',
+      body: `<div style="font-size:12.5px;line-height:1.8;color:var(--ink2)">退出后需要重新登录才能读写团队数据。</div>`,
+      buttons: [{ label: '取消', cls: 'ghost' }, { label: '退出', cls: 'danger', fn: c => { c(); auth.logout(); } }]
+    });
+  });
 
   go('signal');
 
@@ -4571,12 +4695,9 @@ function startDataSync() {
 
 /* =========================================================
    访问模式：只读预览 / 成员编辑
-   - 任何人拿到链接，默认【只读预览】：能看所有页面与数据，不能改
-   - 项目成员输入团队编辑码后进入编辑模式，改动写进团队云端
-   - 编辑状态只记在本机浏览器，换人换设备要重新输码
-   - 说明：这是前端软闸（挡的是链接外传后随手乱改的人）。
-     要做「后端强制隔离」，需要开 Supabase Auth 并按用户写 RLS，
-     步骤见 MIGRATION.md 第 4 节「硬隔离（可选）」。
+   - 登录 = 成员身份，进入应用即解锁编辑（写权限由登录态保证）
+   - 右上角徽标可在「成员编辑 / 只读预览」之间切换（只影响这台设备）
+   - 云端库本身的权限要求登录态，未登录的请求到不了数据
    ========================================================= */
 
 const LS_EDIT = 'wb.signal.v3.edit';
@@ -4694,10 +4815,10 @@ function initMode() {
 store.initCfg();
 initMode();
 (async function boot() {
-  await auth.restore();
-  await enterApp();
-  initMode();
-  startDataSync();
+  showLoading('正在检查登录状态…');
+  const s = await auth.restore();
+  if (!s) { hideLoading(); showGate(); return; }
+  enterApp(s);
 })();
 
 /* 对外的运行时接口：设置页里的「自定义脚本」通过 window.__OPS__ 访问这些 */
@@ -4705,7 +4826,7 @@ window.__OPS__ = {
   store: store, render: render, go: go, toast: toast, cloud: cloud,
   KINDS: KINDS, PAGES: PAGES,
   TX: TX, applyTexts: applyTexts, applyUserCode: applyUserCode,
-  canEdit: canEdit, setEditMode: setEditMode, dataCache: () => dataCache,
+  canEdit: canEdit, setEditMode: setEditMode, tryUnlock: tryUnlock, dataCache: () => dataCache,
   refreshDataCsv: refreshDataCsv, dataStatusText: dataStatusText,
   $: $, $$: $$, esc: esc, uid: uid, num: num, openForm: openForm, openModal: openModal
 };

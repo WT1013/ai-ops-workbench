@@ -1,0 +1,37 @@
+{
+  "$comment": "项目公共配置 —— 全组共用一份。改这里 = 改所有人的连接方式，无需改代码。",
+  "app": {
+    "name": "AI运营组工作台",
+    "version": "v6.2"
+  },
+  "wb": {
+    "endpoint": "https://ai-ops-workbench-43332.app.workbuddy.host",
+    "oauthRelayBaseUrl": "https://www.workbuddy.cn/v2/as/genie-baas/oauth",
+    "publishableKey": "wbpk_6H4ne4Pivj47cmkaQcnAzt_7jKCp89XzvWRs5ECfR4aMtEBaeS38dez",
+    "recTable": "wb_records",
+    "kvTable": "wb_kv",
+    "note": "WorkBuddy 云服务：应用 wbapp_6H4ne4Pivj47cmkaQcnAzt 的数据库，数据一直在这里，没有换过存储位置"
+  },
+  "data": {
+    "base": "data/",
+    "pollSeconds": 60
+  },
+  "edit": {
+    "codeSha256": "232357b8a85e05f0ff657f3a255089698d44a7d85a51e98234d1ab18972c524c",
+    "hint": "登录后即为成员编辑；右上角徽标可切换只读"
+  },
+  "connectors": {
+    "dingtalk": {
+      "pluginId": "dingtalk@workbuddy-connector-plugins-official",
+      "name": "钉钉",
+      "scope": "project",
+      "use": "商品分组绑定、审批、群通知"
+    },
+    "tmeet": {
+      "pluginId": "tmeet@workbuddy-connector-plugins-official",
+      "name": "腾讯会议",
+      "scope": "project",
+      "use": "周会与复盘"
+    }
+  }
+}

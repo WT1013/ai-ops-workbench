@@ -294,6 +294,12 @@ function denyWrite() {
 /* 「我是谁」：记在本机、不进云端；写库时带上改动人，方便追溯是谁改的。
    打开即用，不需要登录，名字只用于标记。 */
 function myName() {
+  /* 登录后优先用账号名；没登录才有本机记名 */
+  try {
+    const u = store.session && store.session.user;
+    const n = u && (u.name || u.email || u.phone);
+    if (n) return String(n);
+  } catch (e) {}
   try {
     const n = localStorage.getItem(LS_ME);
     if (n) return n;

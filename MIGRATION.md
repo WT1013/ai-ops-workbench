@@ -32,7 +32,7 @@
         └───────────────┬───────────────────────────────┘
                         │ 编辑模式下的写入
                         ▼
-        ┌──────── Supabase（ops_records / ops_kv）─────┐
+        ┌──────── WorkBuddy 云库（wb_records / wb_kv）─────┐
         │  界面改动落库，全组 60 秒内可见                │
         └───────────────────────────────────────────────┘
 ```
@@ -42,7 +42,7 @@
 | 通道 | 承载 | 谁改 | 生效方式 |
 |---|---|---|---|
 | **CSV（仓库）** | 店铺、账号、指标等批量业务数据 | 会 git 的成员 | 提交后重新发布，页面 60 秒内自动刷新 |
-| **云端表（Supabase）** | 界面上随手改的内容、目标值、文案、自定义代码 | 拿到编辑码的成员 | 保存即写库，其他人 60 秒内拉到 |
+| **云端表（WorkBuddy 云库）** | 界面上随手改的内容、目标值、文案、自定义代码 | 拿到编辑码的成员 | 保存即写库，其他人 60 秒内拉到 |
 
 ---
 
@@ -58,7 +58,7 @@
 | 构建脚本 | `src/build.cjs` | 同左 | 清单式拼接，漏登记直接报错 |
 | 自检 / 预览 / 测试 | — | `scripts/`、`tests/` | `check` / `serve` / `regression` / `collab` |
 | 发布产物 | 手工拷 | `docs/`（Pages 根） | `index.html` + `data/` + `config/` |
-| 数据库脚本 | — | `supabase/schema.sql` | 建表 + RLS + 授权 |
+| 数据库 | — | WorkBuddy 云服务控制台 | 表与 RLS 已就绪 |
 | 项目配置 | 硬编码在构建脚本里 | `config/app.config.json` | 云端地址、数据源、编辑码哈希、连接器 |
 
 ### 1.2 模块分工（按文件认领，避免互相覆盖）
@@ -111,7 +111,7 @@
 |---|---|---|---|
 | 钉钉 | `dingtalk@workbuddy-connector-plugins-official` | **项目公共** | 分组绑定通知、审批、群消息 |
 | 腾讯会议 | `tmeet@workbuddy-connector-plugins-official` | **项目公共** | 周会、复盘 |
-| Supabase | `config/app.config.json → cloud` | **项目公共** | 唯一数据后端 |
+| WorkBuddy 云库 | `config/app.config.json → wb` | **项目公共** | 唯一数据后端 |
 
 > v6.0 起，所有连接信息集中在一个文件里，任何人不再使用「自己账号下的密钥」。
 > 换后端 / 换组织只改 `config/app.config.json`，无需改代码。
@@ -187,12 +187,12 @@ npm run build                # 产物 + 数据清单
 - **编辑码由项目管理员单独告知成员，不写进仓库、不写进公开文档。**
 
 > ⚠️ 边界说明（必须让成员知道）：
-> 前端只读是**软闸**，挡的是「链接被转发后别人随手乱改」，不是防内行攻击——因为浏览器端持有的是 Supabase 的 publishable key。
+> 前端只读是**软闸**，挡的是「链接被转发后别人随手乱改」，不是防内行攻击——因为云库权限由登录态保证，登录成员才拿得到数据。
 > 要「后端强制只允许登录成员写入」，见 3.4，代价是成员需要登录一次。
 
 ### 3.4 硬隔离（可选，需要登录时再做）
 
-1. Supabase → Authentication → 开启 Email OTP，只允许 `@你的域名`。
+1. 账号由 WorkBuddy 云服务管理，如需限制邮箱域名在其后台配置。
 2. 把 `ops_records` / `ops_kv` 的策略从 `to anon, authenticated using (true)` 改为只允许 `authenticated`：
    ```sql
    drop policy if exists ops_records_all on public.ops_records;
@@ -313,7 +313,7 @@ A：编辑码校验依赖浏览器的安全上下文，必须用 `https://` 或 
 A：依次查：① 有没有 `npm run build`（不构建就不会有新 manifest）② `docs/data/manifest.json` 的 version 有没有变 ③ 有没有 push 成功 ④ 等 60 秒或切回标签页触发检查。
 
 **Q：页面顶部出现黄色提示条？**
-A：云端没连上（多数是还没跑 `supabase/schema.sql`）。此时改动只存本机，恢复后会自动补传；按提示条右侧按钮重试。
+A：云端没连上（多数是未登录或网络异常）。此时改动只存本机，恢复后会自动补传；按提示条右侧按钮重试。
 
 **Q：能不能两个人同时发布？**
 A：不能。发布是单人职责，避免产物和数据清单互相覆盖。

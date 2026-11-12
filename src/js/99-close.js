@@ -3,7 +3,7 @@ window.__OPS__ = {
   store: store, render: render, go: go, toast: toast, cloud: cloud,
   KINDS: KINDS, PAGES: PAGES,
   TX: TX, applyTexts: applyTexts, applyUserCode: applyUserCode,
-  canEdit: canEdit, setEditMode: setEditMode, dataCache: () => dataCache,
+  canEdit: canEdit, setEditMode: setEditMode, tryUnlock: tryUnlock, dataCache: () => dataCache,
   refreshDataCsv: refreshDataCsv, dataStatusText: dataStatusText,
   $: $, $$: $$, esc: esc, uid: uid, num: num, openForm: openForm, openModal: openModal
 };

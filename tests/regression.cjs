@@ -47,13 +47,13 @@ const check = (name, ok, detail) => {
   await page.waitForSelector('#nav button', { timeout: 30000 });
   await page.waitForTimeout(1600);
 
-  /* 1) 打开即用：没有登录门禁，直接进主界面 */
+  /* 1) 本机桩：无门禁直接进主界面 */
   const gate = await page.evaluate(() => ({
     gate: !!document.getElementById('gate'),
     started: !!window.__started,
     boot: !!document.getElementById('boot')
   }));
-  check('打开即用（无登录门禁）', !gate.gate && gate.started && !gate.boot, gate);
+  check('本机桩直接进主界面（无门禁）', !gate.gate && gate.started && !gate.boot, gate);
 
   /* 2) 种子数据落本机 */
   const seed = await page.evaluate(k => {
@@ -75,21 +75,13 @@ const check = (name, ok, detail) => {
   }
   check('七个页面渲染', seen.every(Boolean), seen);
 
-  /* 4) 目标值：只读时改不动 → 解锁后可改并落本机 */
+  /* 4) 目标值：登录态默认可编辑，改一次即落本机 */
   await page.evaluate(() => { const b = document.querySelector('#nav [data-go="board"]'); if (b) b.click(); });
   await page.waitForTimeout(500);
-  const roBlocked = await page.evaluate(() => {
-    const i = document.querySelector('[data-tgt="adopt"]');
-    i.value = '66';
-    i.dispatchEvent(new Event('change', { bubbles: true }));
-    return document.body.classList.contains('ro');
-  });
-  await page.waitForTimeout(500);
-  const cfgRo = await page.evaluate(k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, LS_CFG);
-  check('只读预览时目标值改不动', roBlocked === true && !(cfgRo && Number(cfgRo.targets.adopt) === 66), cfgRo && cfgRo.targets);
-
-  await page.evaluate(() => { window.__OPS__.setEditMode(true, true); window.__OPS__.go('board'); });
-  await page.waitForTimeout(500);
+  const editable = await page.evaluate(() => ({
+    ro: document.body.classList.contains('ro'),
+    canEdit: window.__OPS__.canEdit()
+  }));
   await page.evaluate(() => {
     const i = document.querySelector('[data-tgt="adopt"]');
     i.value = '66';
@@ -97,28 +89,21 @@ const check = (name, ok, detail) => {
   });
   await page.waitForTimeout(900);
   const cfg = await page.evaluate(k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, LS_CFG);
-  check('成员编辑时目标值生效并落本机', cfg && Number(cfg.targets.adopt) === 66, cfg && cfg.targets);
+  check('登录态可直接编辑目标值', editable.canEdit && !editable.ro && cfg && Number(cfg.targets.adopt) === 66, Object.assign(editable, cfg && cfg.targets));
 
-  /* 5) 我是谁：填名字 → 侧栏显示 + 本机记住 */
+  /* 5) 退出登录入口：弹确认框而非直接登出 */
   await page.evaluate(() => document.getElementById('uOut').click());
-  await page.waitForTimeout(300);
-  await page.evaluate(() => {
-    const i = document.getElementById('meInp');
-    i.value = '王涛';
-    i.dispatchEvent(new Event('input', { bubbles: true }));
+  await page.waitForTimeout(400);
+  const lg = await page.evaluate(() => {
+    const m = document.querySelector('.modal-bd');
+    return { open: !!m, title: m ? (m.querySelector('h3,h2,.modal-title') || {}).textContent || '' : '' };
   });
   await page.evaluate(() => {
     const btns = [...document.querySelectorAll('[data-mb]')];
-    const ok = btns.find(b => b.textContent.trim() === '保存');
-    if (ok) ok.click();
+    const c = btns.find(b => b.textContent.trim() === '取消');
+    if (c) c.click();
   });
-  await page.waitForTimeout(400);
-  const me = await page.evaluate(k => ({
-    ls: localStorage.getItem(k),
-    name: (document.getElementById('uName') || {}).textContent,
-    av: (document.getElementById('uAv') || {}).textContent
-  }), LS_ME);
-  check('「我是谁」记名并回显', me.ls === '王涛' && me.name === '王涛' && me.av === '王', me);
+  check('侧栏底郸为退出登录入口', lg.open, lg);
 
   /* 6) 店铺库：账号表列头与尾号 */
   await page.evaluate(() => { const b = document.querySelector('#nav [data-go="stores"]'); if (b) b.click(); });
