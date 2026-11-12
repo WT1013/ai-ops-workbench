@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>AI运营组工作台 · 多人协作迁移手册 v6.0</title>
+<style>
+  @page { size: A4; margin: 20mm 18mm; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    font-family: "Microsoft YaHei", "PingFang SC", "Source Han Sans SC", sans-serif;
+    font-size: 10.5pt; line-height: 1.75; color: #1c2b30;
+  }
+  h1 { font-size: 22pt; line-height: 1.35; margin: 0 0 6pt; letter-spacing: .5pt; }
+  h2 {
+    font-size: 14pt; margin: 22pt 0 8pt; padding-left: 8pt;
+    border-left: 4pt solid #246B78; color: #17434c; page-break-after: avoid;
+  }
+  h3 { font-size: 11.5pt; margin: 14pt 0 6pt; color: #1c2b30; page-break-after: avoid; }
+  p { margin: 0 0 8pt; }
+  .sub { font-size: 10pt; color: #5b6f76; }
+  .meta { margin: 18pt 0 22pt; padding: 12pt 14pt; background: #F1F8FA; border: 1pt solid #CDE3E8; }
+  .meta table { width: 100%; border-collapse: collapse; }
+  .meta td { padding: 3pt 0; font-size: 9.5pt; }
+  .meta td:first-child { width: 90pt; color: #5b6f76; }
+  table { width: 100%; border-collapse: collapse; margin: 8pt 0 12pt; font-size: 9.5pt; }
+  th { background: #E6F4F6; color: #17434c; font-weight: 600; text-align: left; padding: 6pt 8pt; border: 1pt solid #CDE3E8; }
+  td { padding: 5pt 8pt; border: 1pt solid #DCEAEE; vertical-align: top; }
+  tr { page-break-inside: avoid; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: 9pt; background: #F3F7F8; padding: 1pt 3pt; }
+  pre {
+    font-family: Consolas, "Courier New", monospace; font-size: 8.8pt; line-height: 1.6;
+    background: #F6FAFB; border: 1pt solid #DCEAEE; border-left: 3pt solid #246B78;
+    padding: 8pt 10pt; margin: 6pt 0 12pt; white-space: pre-wrap; page-break-inside: avoid;
+  }
+  .note { background: #FCF7E6; border: 1pt solid #EBD9A6; padding: 9pt 12pt; margin: 10pt 0; font-size: 9.5pt; }
+  .warn { background: #FCF1EF; border: 1pt solid #E9C3BC; padding: 9pt 12pt; margin: 10pt 0; font-size: 9.5pt; }
+  .tip { background: #EDF7F2; border: 1pt solid #BFDDCE; padding: 9pt 12pt; margin: 10pt 0; font-size: 9.5pt; }
+  ul, ol { margin: 0 0 10pt; padding-left: 20pt; }
+  li { margin-bottom: 3pt; }
+  .tag { display: inline-block; font-size: 8.5pt; padding: 0 5pt; border-radius: 2pt; background: #E6F4F6; color: #17434c; }
+  .pb { page-break-before: always; }
+  hr { border: none; border-top: 1pt solid #DCEAEE; margin: 16pt 0; }
+  .cover { padding-top: 40pt; }
+  .cover .band { height: 4pt; width: 64pt; background: #246B78; margin-bottom: 18pt; }
+  .toc { font-size: 10pt; }
+  .toc li { margin-bottom: 4pt; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="band"></div>
+  <h1>AI运营组工作台<br />多人协作迁移手册</h1>
+  <p class="sub">把一个人维护的工作台，改成项目组共同维护的共享应用</p>
+
+  <div class="meta">
+    <table>
+      <tr><td>版本</td><td>v6.0</td></tr>
+      <tr><td>日期</td><td>2026 年 11 月 12 日</td></tr>
+      <tr><td>线上地址</td><td>https://wt1013.github.io/ai-ops-workbench/</td></tr>
+      <tr><td>代码仓库</td><td>github.com/WT1013/ai-ops-workbench（私有）</td></tr>
+      <tr><td>适用对象</td><td>项目管理员（发布人）· 项目成员 · 外部查看者</td></tr>
+      <tr><td>配套文件</td><td>MIGRATION.md · data/README.md · CONTRIBUTING.md · skills/</td></tr>
+    </table>
+  </div>
+
+  <p>本手册回答六个问题：资产有哪些、怎么搬进团队空间、权限怎么设、数据怎么实时同步、改完怎么发布、多人同时改怎么不互相覆盖。</p>
+
+  <h3>目录</h3>
+  <ol class="toc">
+    <li>迁移总览：三条通道的职责</li>
+    <li>迁移清单：源码 / CSV / 技能 / 连接器</li>
+    <li>权限规则：仓库 / 团队空间 / 应用内</li>
+    <li>数据源实时同步机制</li>
+    <li>重新发布的完整流程</li>
+    <li>多人修改防覆盖</li>
+    <li>日常检查与应急回滚</li>
+  </ol>
+</div>
+
+<h2 class="pb">一、迁移总览：三条通道的职责</h2>
+
+<p>改造后，一个工作台的运转由三条通道组成，各管一件事，互不干扰。</p>
+
+<table>
+  <tr><th style="width:22%">通道</th><th style="width:30%">承载什么</th><th style="width:22%">谁能改</th><th>怎么生效</th></tr>
+  <tr><td><b>代码仓库</b><br />GitHub 私有</td><td>页面结构、样式、业务逻辑、数据源文件</td><td>项目成员（走 PR）</td><td>合并到 main 后由发布人构建发布</td></tr>
+  <tr><td><b>CSV 数据源</b><br /><code>data/*.csv</code></td><td>店铺、账号、指标等批量业务数据</td><td>数据负责人（单人独占）</td><td>提交 + 发布后，所有人页面 60 秒内自动刷新</td></tr>
+  <tr><td><b>云端库</b><br />Supabase</td><td>界面上随手改的内容、目标值、文案、自定义代码</td><td>拿到编辑码的成员</td><td>保存即写库，其他人 60 秒内拉到</td></tr>
+</table>
+
+<p>外部访问者只走“读”的一侧：打开链接就能看到全部页面与数据，但没有任何写入口。</p>
+
+<div class="tip">
+<b>为什么不全放数据库？</b>批量数据（比如 291 条账号）在页面里一条条改不现实；放在 CSV 里可以用 Excel 批量编辑、有 git 历史可回滚、谁改的一目了然。而日常的状态与备注改动放界面更快。两条通道按“谁更晚谁生效”合并，后文第五节说明。
+</div>
+
+<h2>二、迁移清单</h2>
+
+<h3>2.1 源码（已拆分，可并行开发）</h3>
+<table>
+  <tr><th style="width:32%">资产</th><th style="width:30%">位置</th><th>说明</th></tr>
+  <tr><td>页面骨架</td><td><code>signal-board-v1-static.html</code></td><td>只有 DOM 结构与占位，不含业务逻辑</td></tr>
+  <tr><td>业务逻辑</td><td><code>src/js/</code> 25 个模块</td><td>按功能拆分，一人认领几个文件</td></tr>
+  <tr><td>样式</td><td><code>src/styles/</code> 6 个模块</td><td>基础 / 主题 / 店铺 / 账号条 / 侧栏 / 外壳</td></tr>
+  <tr><td>构建脚本</td><td><code>src/build.cjs</code></td><td>清单式拼接，漏登记直接报错</td></tr>
+  <tr><td>发布产物</td><td><code>docs/</code></td><td>页面 + 数据源 + 配置，GitHub Pages 根目录</td></tr>
+  <tr><td>项目配置</td><td><code>config/app.config.json</code></td><td>云端地址、数据源、编辑码哈希、公共连接器</td></tr>
+</table>
+
+<h3>2.2 模块分工（按文件认领，避免同文件并发）</h3>
+<table>
+  <tr><th style="width:36%">模块</th><th style="width:34%">职责</th><th>建议认领人</th></tr>
+  <tr><td><code>00 01 02 04</code></td><td>工具函数、指标口径、聚合算法</td><td>数据负责人</td></tr>
+  <tr><td><code>03 24 25</code></td><td>云端读写、CSV 同步、只读与编辑模式</td><td>技术负责人</td></tr>
+  <tr><td><code>05 06 08 09</code></td><td>弹窗、表单、通用组件、图表</td><td>前端 A</td></tr>
+  <tr><td><code>10—16-page-*</code></td><td>七个业务页面</td><td>前端 B / 业务对接人</td></tr>
+  <tr><td><code>17 18 19 20</code></td><td>路由、导航、图表交互、全局事件</td><td>前端 A</td></tr>
+  <tr><td><code>21 22 23 29 99</code></td><td>主题、启动、设置页、出口</td><td>技术负责人</td></tr>
+  <tr><td><code>data/*.csv</code></td><td>业务数据</td><td>数据负责人（<b>单人独占</b>）</td></tr>
+  <tr><td><code>config/app.config.json</code></td><td>连接配置、编辑码</td><td>项目管理员（<b>单人独占</b>）</td></tr>
+</table>
+
+<h3>2.3 CSV 数据源（8 张表，480 行）</h3>
+<table>
+  <tr><th style="width:28%">文件</th><th style="width:12%">行数</th><th>关键字段</th></tr>
+  <tr><td><code>data/shops.csv</code></td><td>128</td><td>name / platform / tag / owner / binder / opstat</td></tr>
+  <tr><td><code>data/accounts.csv</code></td><td>291</td><td>shop / role / login / binder / tail / owner / status</td></tr>
+  <tr><td><code>data/metrics.csv</code></td><td>28</td><td>shop / date / adopt / gen / conv / risk / agent / resp</td></tr>
+  <tr><td><code>data/alerts.csv</code></td><td>5</td><td>type / level / shop / due / status</td></tr>
+  <tr><td><code>data/tasks.csv</code></td><td>8</td><td>title / owner / prio / status / due</td></tr>
+  <tr><td><code>data/qc.csv</code></td><td>3</td><td>name / threshold / level / hits</td></tr>
+  <tr><td><code>data/assets.csv</code></td><td>6</td><td>name / type / cat / owner / status</td></tr>
+  <tr><td><code>data/apis.csv</code></td><td>3</td><td>name / type / endpoint / calls / errors</td></tr>
+</table>
+
+<h3>2.4 技能指令</h3>
+<p>项目日常运营用到的六个技能，指令说明已抄录到仓库 <code>skills/</code> 目录（只存说明，不含脚本与登录态）。</p>
+<table>
+  <tr><th style="width:30%">技能</th><th style="width:34%">用途</th><th>工作台对应位置</th></tr>
+  <tr><td>tanyu-group-binding</td><td>探域 22 家店铺商品分组绑定</td><td>资产库“商品分组绑定”、任务“膝部固定器归入既有组”</td></tr>
+  <tr><td>tanyu-workshop-card-fix</td><td>调优工坊“待审核 · 话术未生成”闭环</td><td>预警“12 个在售 SKU 待审核”</td></tr>
+  <tr><td>tanyu-data-fetch</td><td>探域后台数据拉取</td><td>指标数据来源</td></tr>
+  <tr><td>oms-code-lookup</td><td>商品 ID → OMS 编码</td><td>前置校验异常处理</td></tr>
+  <tr><td>dingtalk-sheet-search</td><td>钉钉表格检索</td><td>跨组织 OMS 编码查询</td></tr>
+  <tr><td>deploy-ai-workbench</td><td>驾驶舱类应用发布流程</td><td>发布动作</td></tr>
+</table>
+
+<h3>2.5 连接器（已统一为项目公共连接器）</h3>
+<table>
+  <tr><th style="width:18%">连接器</th><th style="width:44%">标识</th><th>说明</th></tr>
+  <tr><td>钉钉</td><td><code>dingtalk@workbuddy-connector-plugins-official</code></td><td>项目级公共连接器，用于分组绑定通知、审批、群消息</td></tr>
+  <tr><td>腾讯会议</td><td><code>tmeet@workbuddy-connector-plugins-official</code></td><td>项目级公共连接器，用于周会与复盘</td></tr>
+  <tr><td>Supabase</td><td><code>config/app.config.json → cloud</code></td><td>唯一数据后端，全组共用同一份配置</td></tr>
+</table>
+<p>改造前，连接信息散落在构建脚本里、甚至用个人账号下的密钥；现在集中在<b>一个配置文件</b>里，换后端或换组织只改这一个文件，不用动代码。</p>
+
+<div class="pb"></div>
+<h2>三、权限规则</h2>
+
+<p>权限必须三层同时设，缺一层就会漏。</p>
+
+<h3>3.1 第一层：代码仓库（谁能改代码）</h3>
+<ol>
+  <li>仓库保持 <b>Private</b>。</li>
+  <li>Settings → Manage access → 给成员 <b>Write</b>（不要给 Admin）。</li>
+  <li>Settings → Branches → 给 <code>main</code> 加保护规则：</li>
+</ol>
+<table>
+  <tr><th style="width:52%">勾选项</th><th>作用</th></tr>
+  <tr><td>Require a pull request before merging</td><td>禁止直接推 main</td></tr>
+  <tr><td>Require approvals: 1</td><td>至少一人看过</td></tr>
+  <tr><td>Dismiss stale approvals…</td><td>有新提交就重新评审</td></tr>
+  <tr><td>Do not allow bypassing</td><td>管理员也要走 PR</td></tr>
+</table>
+<p>发布权只给项目管理员一个人。</p>
+
+<h3>3.2 第二层：项目团队空间（谁能改资产）</h3>
+<table>
+  <tr><th style="width:24%">角色</th><th style="width:22%">网盘权限</th><th>边界</th></tr>
+  <tr><td>项目管理员</td><td>可编辑</td><td>上传发布包、维护文档</td></tr>
+  <tr><td>项目成员</td><td>可编辑</td><td>上传自己的产物、更新数据副本</td></tr>
+  <tr><td>外部协作者</td><td>不加入 / 仅查看</td><td>只给网页链接，不给网盘</td></tr>
+</table>
+<div class="warn">团队空间里<b>不放</b>数据库密码、API 密钥、团队编辑码。空间是共享的，一旦放了就等于全组公开。</div>
+
+<h3>3.3 第三层：应用内（谁能改数据）</h3>
+<table>
+  <tr><th style="width:20%">谁</th><th style="width:22%">能看到</th><th style="width:30%">能改</th><th>怎么进</th></tr>
+  <tr><td>外部访问者</td><td>全部页面与数据</td><td>什么都不行</td><td>直接打开链接</td></tr>
+  <tr><td>项目成员</td><td>同上</td><td>数据 / 文案 / 页面 / 自定义代码</td><td>右上角徽标 → 输团队编辑码</td></tr>
+  <tr><td>项目管理员</td><td>同上</td><td>以上全部 + 发布</td><td>同上 + 仓库权限</td></tr>
+</table>
+
+<p>实现方式：</p>
+<ul>
+  <li><b>默认只读。</b>新增 / 编辑 / 删除 / 导入 / 保存按钮不渲染；表格点了不进入编辑态；即使用脚本调用写方法，数据层也会拦截并提示。</li>
+  <li><b>编辑码只存哈希。</b>代码里只有 SHA-256 值，没有明文；换码 = 改哈希 + 重新发布。</li>
+  <li><b>状态记在本机。</b>换设备、清缓存都要重新输码；点徽标可随时退回只读。</li>
+</ul>
+
+<div class="note">
+<b>边界必须讲清：</b>前端只读是“软闸”，挡的是链接被转发后别人随手乱改，不是防内行攻击——浏览器端持有的是 Supabase 的 publishable key。若要做到“后端强制只允许登录成员写入”，需开启 Supabase Auth 并把写策略从 <code>to anon</code> 改为 <code>to authenticated</code>，代价是成员需要登录一次。具体 SQL 见 MIGRATION.md 第 3.4 节。
+</div>
+
+<h2>四、数据源实时同步</h2>
+
+<h3>4.1 机制</h3>
+<ol>
+  <li>CSV 与页面一起发布在同一个站点下（<code>/data/</code>）。</li>
+  <li>构建时把 8 张表的内容算一个哈希，写进 <code>data/manifest.json</code>（版本号 + 发布时间 + 各表行数）。</li>
+  <li>页面启动读一次 CSV；之后每 60 秒只拉这份几百字节的清单。</li>
+  <li>版本号变了 = 有人改了 CSV → 自动重新拉取全部 CSV → 合并 → 重渲染。切回标签页也会立刻检查一次。</li>
+</ol>
+<p>所以成员改完 CSV 并提交发布后，<b>所有人不用刷新，60 秒内页面自己变</b>。</p>
+
+<h3>4.2 合并规则（防覆盖的核心）</h3>
+<table>
+  <tr><th style="width:44%">情况</th><th>结果</th></tr>
+  <tr><td>CSV 行，界面没改过</td><td>用 CSV</td></tr>
+  <tr><td>界面改过，且改动时间晚于 CSV 发布时间</td><td><b>保留界面版本</b>，不会被下次发布盖掉</td></tr>
+  <tr><td>界面改过，但 CSV 之后又更新了</td><td>CSV 赢（以最新发布的表为准）</td></tr>
+  <tr><td>CSV 里删掉某行</td><td>该行若来自 CSV，页面同步删除</td></tr>
+  <tr><td>界面新建的行</td><td>CSV 永远不会删它</td></tr>
+  <tr><td>历史遗留、没有来源标记的行</td><td>一律保留，绝不因一次同步丢数据</td></tr>
+</table>
+
+<h3>4.3 实践建议</h3>
+<ul>
+  <li>批量数据（店铺、账号、指标）走 CSV，一次改一批，有 git 历史可回滚。</li>
+  <li>日常小改（状态、备注、负责人、目标值）走界面，快，且不会被下次 CSV 覆盖。</li>
+  <li>不要在同一批里既改 CSV 又在界面改同一行——谁赢取决于时间，容易互相疑惑。</li>
+  <li>CSV 的 <code>id</code> 与表头不能改；改了等于删旧行 + 加新行，界面上的历史改动会丢。</li>
+</ul>
+
+<div class="pb"></div>
+<h2>五、重新发布流程</h2>
+
+<p>只有一条路径：改源码或 CSV → 本地构建 → 推送 main → Pages 自动更新（1–2 分钟）→ <b>链接不变</b>。</p>
+
+<h3>5.1 只改数据（最常见）</h3>
+<pre>git pull --rebase
+# 编辑 data/shops.csv（Excel / 文本编辑器，存 UTF-8 逗号分隔）
+npm run build          # 生成新的数据清单（版本号 = 内容哈希）
+git add data docs dist
+git commit -m "data: 更新店铺表 · 新增 3 家抖音店"
+git push</pre>
+
+<h3>5.2 只改页面或逻辑</h3>
+<pre>git pull --rebase
+# 改 src/js/ 或 src/styles/ 里对应模块
+npm run check &amp;&amp; npm run build
+npm run test           # 功能回归
+npm run test:collab    # 权限与数据源回归
+git add -A
+git commit -m "feat: 数据看板增加响应时长列"
+git push</pre>
+
+<h3>5.3 改连接配置</h3>
+<p>只改 <code>config/app.config.json</code>（云端地址、表名、轮询间隔、连接器、编辑码哈希），重新构建发布即可，不碰代码。</p>
+
+<h3>5.4 发布后 30 秒自检</h3>
+<ol>
+  <li>打开线上链接 → 右上角是“只读预览” → 没有黄色提示条 → 设置页的数据源版本与刚发布的版本一致。</li>
+  <li>点徽标输码 → 变“成员编辑” → 改一个目标值 → 换一个浏览器打开，60 秒内能看到。</li>
+  <li>七个页面都能进，控制台无报错。</li>
+</ol>
+
+<h3>5.5 回滚</h3>
+<pre>git revert &lt;坏提交的 sha&gt; &amp;&amp; npm run build &amp;&amp; git push</pre>
+<p>1–2 分钟回到上一版。切勿用 <code>git push -f</code>，会把别人的提交一起冲掉。</p>
+
+<h2>六、多人修改防覆盖</h2>
+
+<h3>6.1 代码层</h3>
+<table>
+  <tr><th style="width:26%">规则</th><th>做法</th></tr>
+  <tr><td>一文件一人</td><td>按模块分工表认领；改别人的模块先在群里说一声</td></tr>
+  <tr><td>先拉后推</td><td>动手前 <code>git pull --rebase</code>，提交前再拉一次</td></tr>
+  <tr><td>小步提交</td><td>一次只做一件事，标题写清“改了什么、为什么”</td></tr>
+  <tr><td>走 PR</td><td>main 开保护，所有改动经 PR + 1 人评审</td></tr>
+  <tr><td>冲突处理</td><td>CSV 冲突按整行取舍；JS 冲突保留双方逻辑后跑 check，禁止 <code>-X ours/theirs</code> 一把梭</td></tr>
+  <tr><td>单一出口</td><td>只有管理员能合并 main 并发布，避免两人同时发布互相盖产物</td></tr>
+</table>
+
+<h3>6.2 云端层</h3>
+<ul>
+  <li>只做<b>行级差分</b>写入，只推变化的记录，不整库覆盖。</li>
+  <li>每行带改动人（<code>updated_by</code>）与时间（<code>updated_at</code>），出问题能追到人。</li>
+  <li>拉取有保护：正在输入、弹窗打开、刚提交 2 秒内，都不会被远端刷新打断。</li>
+  <li>冲突策略是“最后写入者胜”，没有字段级合并——所以<b>同一行不要两个人同时改</b>。</li>
+</ul>
+
+<h3>6.3 版本与留痕</h3>
+<ul>
+  <li>每次发布在 <code>CHANGELOG.md</code> 记一行：版本号 / 改了什么 / 谁改的。</li>
+  <li>源码包带版本号，团队空间旧包不删，出问题能拿到任意历史版本。</li>
+  <li>数据源版本号是内容哈希，发布日志里能看到“这次发的是哪一版数据”。</li>
+</ul>
+
+<h2>七、日常检查与应急</h2>
+
+<h3>7.1 每周检查</h3>
+<table>
+  <tr><th style="width:40%">检查项</th><th>怎么查</th></tr>
+  <tr><td>线上是否是新版</td><td>设置页看数据源版本 + 版本号</td></tr>
+  <tr><td>数据行数是否正常</td><td><code>npm run build</code> 输出各表行数，与预期比对</td></tr>
+  <tr><td>权限是否仍然生效</td><td>隐身窗打开链接，确认是“只读预览”、无写按钮</td></tr>
+  <tr><td>云端是否连通</td><td>页面顶部无黄色提示条</td></tr>
+</table>
+
+<h3>7.2 常见问题</h3>
+<table>
+  <tr><th style="width:40%">现象</th><th>处置</th></tr>
+  <tr><td>改了 CSV，页面没变</td><td>检查是否执行 <code>npm run build</code>、<code>docs/data/manifest.json</code> 版本是否变、是否 push 成功、等 60 秒</td></tr>
+  <tr><td>徽标点不开 / 输码无反应</td><td>必须用 https 或 localhost 打开，<code>file://</code> 双击打不开编辑模式</td></tr>
+  <tr><td>顶部黄色提示条</td><td>云端未连通（多是还没跑建表 SQL）；此时改动只存本机，恢复后自动补传</td></tr>
+  <tr><td>两人同时发布</td><td>禁止。发布是单人职责，避免产物与数据清单互相覆盖</td></tr>
+</table>
+
+<div class="note" style="margin-top:16pt">
+<b>资料位置</b>：完整规范见仓库 <code>MIGRATION.md</code>；数据字段见 <code>data/README.md</code>；协作流程见 <code>CONTRIBUTING.md</code>；技能指令见 <code>skills/</code>。<br />
+<b>团队编辑码</b>：由项目管理员单独告知成员，不写入本文档、不写入仓库。
+</div>
+
+</body>
+</html>

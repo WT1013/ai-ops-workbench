@@ -99,7 +99,7 @@ function cloudNotice(msg, retry) {
     el = document.createElement('div');
     el.id = 'cloudNotice';
     el.style.cssText = [
-      'position:fixed', 'left:50%', 'top:12px', 'transform:translateX(-50%)', 'z-index:120',
+      'position:fixed', 'left:50%', 'top:54px', 'transform:translateX(-50%)', 'z-index:120',
       'display:flex', 'align-items:center', 'gap:10px', 'max-width:min(760px,92vw)',
       'padding:9px 12px', 'border-radius:10px', 'font-size:12.5px', 'line-height:1.55',
       'background:var(--warn-soft)', 'color:var(--warn)', 'border:1px solid var(--warn)',
