@@ -2,14 +2,15 @@
   "$comment": "项目公共配置 —— 全组共用一份。改这里 = 改所有人的连接方式，无需改代码。",
   "app": {
     "name": "AI运营组工作台",
-    "version": "v6.0"
+    "version": "v6.1"
   },
-  "cloud": {
-    "url": "https://kocuowtqklojxkhzlwpe.supabase.co",
-    "key": "sb_publishable_EinGWbe2S8hHl0kqngnmIg_uyZ5xRnp",
-    "recTable": "ops_records",
-    "kvTable": "ops_kv",
-    "scope": "project"
+  "wb": {
+    "endpoint": "https://ai-ops-workbench-43332.app.workbuddy.host",
+    "oauthRelayBaseUrl": "https://www.workbuddy.cn/v2/as/genie-baas/oauth",
+    "publishableKey": "wbpk_6H4ne4Pivj47cmkaQcnAzt_7jKCp89XzvWRs5ECfR4aMtEBaeS38dez",
+    "recTable": "wb_records",
+    "kvTable": "wb_kv",
+    "note": "WorkBuddy 云服务：应用 wbapp_6H4ne4Pivj47cmkaQcnAzt 的数据库，数据一直在这里，没有换过存储位置"
   },
   "data": {
     "base": "data/",

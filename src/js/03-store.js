@@ -1,5 +1,6 @@
-   存储：团队云端共享（Supabase 直连，与「远山驾驶舱」同一套方式）
-   打开链接即用，不需要登录；所有人读写同一条云端记录，改一处全组可见。
+   存储：团队云端共享（WorkBuddy 云服务）
+   应用 wbapp_6H4ne4Pivj47cmkaQcnAzt 的数据库，472 条历史数据都在这里；
+   打开链接即用，不需要登录（未登录走 anon 角色，权限已开放）；
    写操作只做差分 upsert / delete，不整库覆盖，避免互相冲掉。
    云端不可达时自动落本地缓存，页面照常可用，联网后再推上去。
    密码类信息不再进入工作台：账号只记「绑定人 + 手机后四位」。
@@ -11,46 +12,27 @@ const DB_VER = 4;
 const KINDS = ['shops', 'metrics', 'accounts', 'alerts', 'tasks', 'qc', 'assets', 'apis'];
 const PAGE_ROWS = 1000;
 
-/* 云配置由构建脚本注入：{ url, key, recTable, kvTable } */
+/* 云配置由构建脚本注入 __WB_CFG__：{ endpoint, oauthRelayBaseUrl, publishableKey } */
 const cloud = (function () {
-  const cfg = window.__OPS_CFG__ || {};
-  if (!cfg.url || !cfg.key) return null;
-  return {
-    url: String(cfg.url).replace(/\/+$/, ''),
-    key: cfg.key,
-    rec: cfg.recTable || 'ops_records',
-    kv: cfg.kvTable || 'ops_kv'
-  };
+  const cfg = window.__WB_CFG__;
+  if (!cfg || !window.WorkBuddyCloud) return null;
+  try {
+    return window.WorkBuddyCloud.createWorkBuddyCloud({
+      endpoint: cfg.endpoint,
+      oauthRelayBaseUrl: cfg.oauthRelayBaseUrl,
+      publishableKey: cfg.publishableKey
+    });
+  } catch (e) { return null; }
 })();
-
-function sbHeaders(extra) {
-  const h = { apikey: cloud.key, Authorization: 'Bearer ' + cloud.key, 'Content-Type': 'application/json' };
-  return Object.assign(h, extra || {});
-}
-async function sbFetch(path, opt) {
-  const r = await fetch(cloud.url + '/rest/v1/' + path, opt);
-  if (!r.ok) {
-    let msg = 'HTTP ' + r.status;
-    try {
-      const j = await r.json();
-      msg = j.message || j.hint || j.details || msg;
-    } catch (e) {}
-    const err = new Error(msg);
-    err.status = r.status;
-    throw err;
-  }
-  const t = await r.text();
-  return t ? JSON.parse(t) : null;
-}
 
 async function dbSelectAll() {
   if (!cloud) return [];
   const out = [];
   for (let from = 0; ; from += PAGE_ROWS) {
-    const rows = (await sbFetch(
-      cloud.rec + '?select=key,coll,rec_id,data&order=key.asc&limit=' + PAGE_ROWS + '&offset=' + from,
-      { headers: sbHeaders() }
-    )) || [];
+    const r = await cloud.database.from('wb_records')
+      .select('key,coll,rec_id,data').order('key').range(from, from + PAGE_ROWS - 1);
+    if (r.error) throw r.error;
+    const rows = r.data || [];
     out.push.apply(out, rows);
     if (rows.length < PAGE_ROWS) break;
   }
@@ -58,16 +40,14 @@ async function dbSelectAll() {
 }
 async function kvGet(k) {
   if (!cloud) return null;
-  const rows = (await sbFetch(cloud.kv + '?select=v&k=eq.' + encodeURIComponent(k), { headers: sbHeaders() })) || [];
-  return rows.length ? rows[0].v : null;
+  const r = await cloud.database.from('wb_kv').select('v').eq('k', k).maybeSingle();
+  if (r.error) throw r.error;
+  return r.data ? r.data.v : null;
 }
 async function kvSet(k, v) {
   if (!cloud) return;
-  await sbFetch(cloud.kv + '?on_conflict=k', {
-    method: 'POST',
-    headers: sbHeaders({ Prefer: 'resolution=merge-duplicates,return=minimal' }),
-    body: JSON.stringify([{ k: k, v: v, updated_at: new Date().toISOString() }])
-  });
+  const r = await cloud.database.from('wb_kv').upsert({ k: k, v: v, updated_at: new Date().toISOString() });
+  if (r.error) throw r.error;
 }
 
 const store = {
@@ -253,19 +233,14 @@ const store = {
         const dels = Object.keys(this.synced).filter(k => !seen[k]);
         for (let i = 0; i < ups.length; i += 200) {
           const part = ups.slice(i, i + 200);
-          await sbFetch(cloud.rec + '?on_conflict=key', {
-            method: 'POST',
-            headers: sbHeaders({ Prefer: 'resolution=merge-duplicates,return=minimal' }),
-            body: JSON.stringify(part)
-          });
+          const r = await cloud.database.from('wb_records').upsert(part);
+          if (r.error) throw r.error;
           part.forEach(u => { this.synced[u.key] = JSON.stringify(u.data); });
         }
         for (let i = 0; i < dels.length; i += 200) {
           const part = dels.slice(i, i + 200);
-          await sbFetch(cloud.rec + '?key=in.(' + part.join(',') + ')', {
-            method: 'DELETE',
-            headers: sbHeaders({ Prefer: 'return=minimal' })
-          });
+          const r = await cloud.database.from('wb_records').delete().in('key', part);
+          if (r.error) throw r.error;
           part.forEach(k => { delete this.synced[k]; });
         }
       } while (this._again);

@@ -92,7 +92,7 @@ async function pullLatest(silent) {
   return true;
 }
 
-/* 云端未就绪时的常驻提示条（最常见：数据表还没在 Supabase 建） */
+/* 云端未就绪时的常驻提示条（最常见：云端暂不可达） */
 function cloudNotice(msg, retry) {
   let el = document.getElementById('cloudNotice');
   if (!el) {
@@ -128,7 +128,7 @@ function syncNotice() {
   const needSql = /PGRST205|42P01|Could not find the table|schema cache/i.test(store.cloudErr);
   cloudNotice(
     needSql
-      ? '云端已连上，但数据表还没建：把 supabase/schema.sql 在 Supabase 的 SQL Editor 跑一次，再点右边重试。在那之前，改动只存在你这台电脑上。'
+      ? '云端已连上，但数据表不可用：请联系项目管理员检查云端库（表 wb_records / wb_kv），再点右边重试。在那之前，改动只存在你这台电脑上。'
       : '云端暂时连不上（' + store.cloudErr + '），改动先存在本机，恢复后打开页面会自动补传。',
     needSql ? retryCloud : null
   );

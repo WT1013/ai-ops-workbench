@@ -77,14 +77,16 @@ const base = read('signal-board-v1-static.html');
 const css = CSS_PARTS.map(f => read('src/styles/' + f)).join('\n');
 const js = JS_PARTS.map(f => read('src/js/' + f)).join('\n');
 
-/* 云端存储：Supabase 直连（与「远山驾驶舱」同一套方式）
-   publishable key 只用于标识项目，数据权限由 Supabase 的 RLS 策略控制；
-   表结构见 supabase/schema.sql。 */
+/* 云端存储：WorkBuddy 云服务（应用 wbapp_6H4ne4Pivj47cmkaQcnAzt 的数据库）
+   数据一直存在这里；打开即用（未登录走 anon 角色，权限已对 anon 开放）。 */
+const WB_CFG = {
+  endpoint: PROJECT_CFG.wb.endpoint,
+  oauthRelayBaseUrl: PROJECT_CFG.wb.oauthRelayBaseUrl,
+  publishableKey: PROJECT_CFG.wb.publishableKey
+};
+
+/* 其余运行时配置：数据源轮询、编辑码、公共连接器 */
 const OPS_CFG = {
-  url: PROJECT_CFG.cloud.url,
-  key: PROJECT_CFG.cloud.key,
-  recTable: PROJECT_CFG.cloud.recTable,
-  kvTable: PROJECT_CFG.cloud.kvTable,
   dataBase: PROJECT_CFG.data.base,
   pollSeconds: PROJECT_CFG.data.pollSeconds,
   editSha: PROJECT_CFG.edit.codeSha256,
@@ -93,9 +95,10 @@ const OPS_CFG = {
   version: VERSION
 };
 
-/* --stub：清空密钥 → 走本机模式，供离线回归测试用 */
+/* --stub：不带 SDK 与密钥 → 走本机模式，供离线回归测试用 */
 const STUB = !!process.env.WB_STUB || process.argv.indexOf('--stub') >= 0;
-const RUNTIME_CFG = STUB ? Object.assign({}, OPS_CFG, { key: '' }) : OPS_CFG;
+const sdk = STUB ? '' : read('src/vendor/wb-cloud.global.js');
+const WB_RUNTIME = STUB ? null : WB_CFG;
 
 let h = base;
 
@@ -110,13 +113,15 @@ if (h.indexOf(`${APP_NAME} ${VERSION}`) < 0) throw new Error('title 替换失败
 // 3) 侧栏底部加 id
 h = h.replace('<div class="rail-foot">', '<div class="rail-foot" id="railFoot">');
 
-// 4) 脚本：云配置 → 应用（不再内联任何第三方 SDK，体积从 282KB 降到 ~90KB）
+// 4) 脚本：云 SDK → 云配置 → 应用
 const anchor = h.indexOf('id="viewport"');
 const s = h.indexOf('<script>', anchor);
 const e = h.indexOf('</script>', s);
 if (s < 0 || e < 0) throw new Error('骨架里找不到脚本占位');
 const block =
-  '<script>window.__OPS_CFG__=' + JSON.stringify(RUNTIME_CFG) + ';</script>\n' +
+  (STUB ? '' : '<script>\n' + sdk + '\n</script>\n') +
+  '<script>window.__OPS_CFG__=' + JSON.stringify(OPS_CFG) + ';' +
+  (WB_RUNTIME ? 'window.__WB_CFG__=' + JSON.stringify(WB_RUNTIME) : '') + ';</script>\n' +
   '<script>\n' + js + '\n</script>';
 h = h.slice(0, s) + block + h.slice(e + 9);
 
@@ -130,7 +135,8 @@ h = h.replace('</body>', '<div id="modal-root"></div>\n<div id="toast-root"></di
 ['data-pwd', 'openVault', 'vaultPersist', '__parseXlsxRows'].forEach(k => {
   if (h.indexOf(k) >= 0) throw new Error('产物里仍有已下线的密码/保险箱代码：' + k);
 });
-['WorkBuddyCloud', 'handleWorkBuddyCallback', 'sendOtp', 'showGate'].forEach(k => {
+/* 旧登录门禁代码不得回归（SDK 自带的 OAuth 工具函数不算门禁） */
+['showGate'].forEach(k => {
   if (h.indexOf(k) >= 0) throw new Error('产物里仍有旧登录门禁代码：' + k);
 });
 
@@ -184,7 +190,6 @@ if (STUB) {
   /* GitHub Pages 发布目录（仓库 Settings → Pages 指向 main /docs） */
   fs.mkdirSync(path.join(ROOT, 'docs'), { recursive: true });
   fs.writeFileSync(path.join(ROOT, 'docs/index.html'), h);
-  fs.copyFileSync(path.join(ROOT, 'supabase/schema.sql'), path.join(ROOT, 'docs/schema.sql'));
   /* 项目公共配置也发一份，方便不开代码就能核对连接器 */
   fs.mkdirSync(path.join(ROOT, 'docs/config'), { recursive: true });
   fs.copyFileSync(path.join(ROOT, 'config/app.config.json'), path.join(ROOT, 'docs/config/app.config.json'));
@@ -194,4 +199,4 @@ if (STUB) {
   console.log('data version:', mf.version, '| publishedAt:', mf.publishedAt, '|', JSON.stringify(mf.counts));
 }
 
-console.log('version:', VERSION, '| app bytes:', Buffer.byteLength(js), '| cloud:', STUB ? 'local' : OPS_CFG.url);
+console.log('version:', VERSION, '| app bytes:', Buffer.byteLength(js), '| sdk bytes:', STUB ? 0 : Buffer.byteLength(sdk), '| cloud:', STUB ? 'local' : WB_CFG.endpoint);
