@@ -2,7 +2,7 @@
   "$comment": "项目公共配置 —— 全组共用一份。改这里 = 改所有人的连接方式，无需改代码。",
   "app": {
     "name": "AI运营组工作台",
-    "version": "v6.2"
+    "version": "v6.3"
   },
   "wb": {
     "endpoint": "https://ai-ops-workbench-43332.app.workbuddy.host",

@@ -127,6 +127,17 @@ const SHOT = 'tmp';
   fs.writeFileSync(csvPath, csv0);
   fs.writeFileSync(mfPath, JSON.stringify(mf, null, 2));
 
+  /* 10. 正式域名口径：/data/* 静态资源必须带 sharecode，否则 403 静默失效 */
+  const p2 = await browser.newPage({ viewport: { width: 1200, height: 800 } });
+  const dataReqs = [];
+  p2.on('request', r => { const u = r.url(); if (u.indexOf('/data/') >= 0) dataReqs.push(u); });
+  await p2.goto(BASE + '?sharecode=TEST-SHARE-1', { waitUntil: 'networkidle' });
+  await p2.waitForTimeout(900);
+  const withSc = dataReqs.filter(u => u.indexOf('sharecode=TEST-SHARE-1') >= 0).length;
+  ok('数据源请求自带 sharecode', dataReqs.length > 0 && withSc === dataReqs.length,
+    dataReqs.length + ' 个请求 / ' + withSc + ' 带参');
+  await p2.close();
+
   await page.evaluate(() => window.__OPS__.go('signal'));
   await page.waitForTimeout(500);
   await page.screenshot({ path: path.join(SHOT, 'v6-readonly.png') });

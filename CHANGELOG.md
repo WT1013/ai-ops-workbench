@@ -1,5 +1,12 @@
 # 变更记录
 
+## v6.3 · 2026-11-13 · 修 CSV 数据源在正式域名下 403
+
+- **问题**：应用放在 `app.workbuddy.host` 时，`/data/*.csv`、`/data/manifest.json` 属于静态资源，裸路径访问返回 **403**（只有带 `?sharecode=` 的页面入口才放行）。前端拉 CSV 时只拼了 `?t=时间戳`，于是线上数据源一直静默失败——页面照常用云库数据，但**成员改 CSV 后页面不会自动刷新**（第 4 条需求在线上其实是断的）。
+- **修复**：`24-data-sync.js` 新增 `dataUrl()`，把 `data/` 下的请求统一拼成绝对地址，自动继承当前页的 `sharecode`（没有则不拼，GitHub Pages 镜像与本机预览不受影响），再附 `t` 参数防缓存。
+- **验证**：新增断言「数据源请求自带 sharecode」→ `tests/collab.cjs` 18/18、`tests/regression.cjs` 7/7 全绿；线上 `/data/manifest.json?sharecode=…` 返回 200 与版本 `66cbbb865281`。
+- 云库数据核对：`wb_records` 472 条（shops 128 / accounts 291 / metrics 28 / tasks 8 / assets 6 / alerts 5 / qc 3 / apis 3），`wb_kv` 2 键（cfg / meta），两表 RLS 开启 + `authenticated`/`anon` 授权完整。
+
 ## v6.2 · 2026-11-12 · 存储回到 WorkBuddy 云库 + 登录门禁
 
 - **不用 Supabase 了**：存储切回 WorkBuddy 云服务（应用 `wbapp_6H4ne4Pivj47cmkaQcnAzt`），数据一直在原库，472 条记录没动过；`supabase/` 建表脚本删除。

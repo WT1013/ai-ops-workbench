@@ -24,6 +24,20 @@ function dataBase() {
   const c = window.__OPS_CFG__ || {};
   return String(c.dataBase || 'data/').replace(/\/+$/, '') + '/';
 }
+/* 正式域名（app.workbuddy.host）下静态资源要带 sharecode 才放行，
+   裸路径 /data/xx.csv 会 403。这里统一拼成绝对地址并补上 sharecode。 */
+function dataUrl(file) {
+  let u;
+  try { u = new URL(dataBase() + file, location.href); }
+  catch (e) { u = null; }
+  if (!u) return dataBase() + file + '?t=' + Date.now();
+  try {
+    const sc = new URLSearchParams(location.search).get('sharecode');
+    if (sc && !u.searchParams.get('sharecode')) u.searchParams.set('sharecode', sc);
+  } catch (e) {}
+  u.searchParams.set('t', String(Date.now()));
+  return u.toString();
+}
 function dataPollMs() {
   const c = window.__OPS_CFG__ || {};
   const s = +c.pollSeconds || 60;
@@ -83,9 +97,8 @@ async function fetchText(url) {
 /* 读 manifest，版本变了就把所有 CSV 拉下来。
    返回 true 表示数据有更新。 */
 async function loadDataCsv(force) {
-  const base = dataBase();
   try {
-    const mf = JSON.parse(await fetchText(base + 'manifest.json?t=' + Date.now()));
+    const mf = JSON.parse(await fetchText(dataUrl('manifest.json')));
     if (!mf || !mf.version) throw new Error('manifest 格式不对');
     if (!force && dataCache && dataCache.version === mf.version) {
       dataCheckedAt = Date.now();
@@ -98,7 +111,7 @@ async function loadDataCsv(force) {
       const kind = DATA_KINDS[i];
       if (files.length && files.indexOf(kind + '.csv') < 0) continue;
       try {
-        const txt = await fetchText(base + kind + '.csv?t=' + Date.now());
+        const txt = await fetchText(dataUrl(kind + '.csv'));
         byKind[kind] = csvParse(txt).map(r => typed(kind, r));
       } catch (e) { /* 单个文件坏了不影响其它集合 */ }
     }
