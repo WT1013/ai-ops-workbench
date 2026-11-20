@@ -33,6 +33,7 @@ const JS_PARTS = [
   '06-forms.js',         // 表单定义、字段渲染、提交
   '07-import.js',        // 指标导入（CSV/TSV/JSON 解析）
   '08-ui-kit.js',        // 渲染小工具：图标、chip、目标值配置条
+  '08b-import-stores.js', // 店铺 / 账号导入（Excel · CSV · 粘贴）
   '09-chart.js',         // 折线图
   '10-page-signal.js',   // 页面：首页 · 信号带
   '11-page-board.js',    // 页面：数据看板
@@ -98,6 +99,9 @@ const OPS_CFG = {
 /* --stub：不带 SDK 与密钥 → 走本机模式，供离线回归测试用 */
 const STUB = !!process.env.WB_STUB || process.argv.indexOf('--stub') >= 0;
 const sdk = STUB ? '' : read('src/vendor/wb-cloud.global.js');
+/* Excel 解析：SheetJS mini 版（只读 xlsx/xls，250KB）。导店铺 / 导账号用，
+   与已下线的口令保险箱无关——这里不碰任何密码列。 */
+const xlsxLib = read('src/vendor/xlsx.mini.js');
 const WB_RUNTIME = STUB ? null : WB_CFG;
 
 let h = base;
@@ -120,13 +124,18 @@ const e = h.indexOf('</script>', s);
 if (s < 0 || e < 0) throw new Error('骨架里找不到脚本占位');
 const block =
   (STUB ? '' : '<script>\n' + sdk + '\n</script>\n') +
+  '<script>\n' + xlsxLib + '\n</script>\n' +
   '<script>window.__OPS_CFG__=' + JSON.stringify(OPS_CFG) + ';' +
   (WB_RUNTIME ? 'window.__WB_CFG__=' + JSON.stringify(WB_RUNTIME) : '') + ';</script>\n' +
   '<script>\n' + js + '\n</script>';
 h = h.slice(0, s) + block + h.slice(e + 9);
 
 // 5) 挂载点
-h = h.replace('</body>', '<div id="modal-root"></div>\n<div id="toast-root"></div>\n</body>');
+/* 注意：必须替换「最后一个」</body>。内联的第三方库（SheetJS）里有导出 HTML 的模板
+   字符串，本身就含 </body>，用 replace 会命中库内那个，把挂载点塞进字符串里并破坏语法。 */
+const bodyEnd = h.lastIndexOf('</body>');
+if (bodyEnd < 0) throw new Error('骨架里找不到 </body>');
+h = h.slice(0, bodyEnd) + '<div id="modal-root"></div>\n<div id="toast-root"></div>\n' + h.slice(bodyEnd);
 
 // 6) 安全闸：不得残留明文密码 / 已下线的保险箱代码 / 旧登录门禁
 ['yongheng123', 'xianma123', '123yongheng'].forEach(b => {
@@ -204,4 +213,4 @@ if (STUB) {
   console.log('data version:', mf.version, '| publishedAt:', mf.publishedAt, '|', JSON.stringify(mf.counts));
 }
 
-console.log('version:', VERSION, '| app bytes:', Buffer.byteLength(js), '| sdk bytes:', STUB ? 0 : Buffer.byteLength(sdk), '| cloud:', STUB ? 'local' : WB_CFG.endpoint);
+console.log('version:', VERSION, '| app bytes:', Buffer.byteLength(js), '| sdk bytes:', STUB ? 0 : Buffer.byteLength(sdk), '| xlsx bytes:', Buffer.byteLength(xlsxLib), '| cloud:', STUB ? 'local' : WB_CFG.endpoint);

@@ -151,3 +151,21 @@
   .seed-bar{font-size:11px}
   .seed-bar .btn{margin-left:0}
 }
+
+/* ---------- 导入预览表（店铺 / 账号） ---------- */
+.imp-tbl-wrap{margin-top:10px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.imp-tbl{width:100%;border-collapse:collapse;font-size:11px}
+.imp-tbl th{
+  background:var(--panel2);color:var(--ink3);font-weight:500;text-align:left;
+  padding:5px 8px;border-bottom:1px solid var(--line);white-space:nowrap;
+}
+.imp-tbl td{
+  padding:5px 8px;border-bottom:1px solid var(--line);color:var(--ink2);
+  max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.imp-tbl tr:last-child td{border-bottom:none}
+.imp-tbl .mono{font-family:var(--mono)}
+.imp-grp{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.imp-grp-lbl{flex:0 0 50px;font-size:11px;color:var(--ink3)}
+.imp-grp .imp-tabs{margin-bottom:0}
+.imp-tbl-note{font-size:11px;color:var(--ink3);margin-top:10px}

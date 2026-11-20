@@ -66,7 +66,7 @@ document.addEventListener('click', e => {
   }
 
   const imp = e.target.closest('[data-import]');
-  if (imp) { openImport(); return; }
+  if (imp) { (imp.dataset.import === 'stores' ? openStoreImport : openImport)(); return; }
 
   const cs = e.target.closest('[data-clear-seed]');
   if (cs) {

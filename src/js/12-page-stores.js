@@ -181,6 +181,7 @@ function renderStores() {
     <span class="sub">${liveN} 家在营 · ${histN} 家历史/关店 · 账号 ${acctN} 条 · 缺账号 ${noAcctN} · 缺负责人 ${noOwnerN}</span>
     <div class="head-actions" style="margin-left:auto">
       <button class="btn" data-go="assets">资产库 ${store.list('assets').length} 份 →</button>
+      <button class="btn" data-import="stores">${ICON.down} 导入店铺/账号</button>
       <button class="btn primary" data-new="shops">${ICON.plus} 新增店铺</button>
     </div>
   </div>
