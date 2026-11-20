@@ -30,7 +30,9 @@ const ACCT_HEAD_MAP = {
   '使用人': 'owner', 'owner': 'owner',
   '岗位': 'post', 'post': 'post', '职位': 'post',
   '状态': 'status', 'status': 'status', '启用状态': 'status',
-  '备注': 'note', 'note': 'note', '说明': 'note'
+  '备注': 'note', 'note': 'note', '说明': 'note',
+  /* 密码列：认出来但一律丢弃，工作台不保存密码 */
+  '密码': '__skip', '登录密码': '__skip', 'password': '__skip', 'pwd': '__skip'
 };
 
 const PLAT_ALIAS = {
@@ -144,6 +146,77 @@ const impRole = v => {
 };
 const impStatus = v => (/停用|禁用|关闭|注销/.test(impS(v)) ? '停用' : '启用');
 
+/* 绑定人单元格常见「手机号（姓名）」：拆出姓名，手机号交给 impTail 取后四位 */
+function impBinderName(v) {
+  const s = impS(v);
+  if (!s) return '';
+  if (/^1\d{10}$/.test(s)) return '';                       // 只有手机号，没有姓名
+  const m = s.match(/^1\d{10}\s*[（(]\s*([^)）]+?)\s*[)）]/);
+  if (m) return m[1].trim();
+  const m2 = s.match(/^([^（(]+?)\s*[（(]\s*1\d{10}\s*[)）]/); // 「姓名（手机号）」
+  if (m2) return m2[1].trim();
+  return s;
+}
+
+/* 分组标题常混进日期/备注：「祥佳个人护理专营店-3/24承接」「衡源湘养生馆11.19」→ 只留店名 */
+function impGroupShopName(v) {
+  const raw = impS(v);
+  let s = raw;
+  s = s.replace(/\s*[-—–]?\s*\d{1,2}\s*[\/.]\s*\d{1,2}(?:\s*[-—–]\s*\d{1,2}\s*[\/.]\s*\d{1,2})?\s*(承接|起|闭店|关店|已关|停业)?\s*$/, '');
+  s = s.replace(/\s*\d{4}\s*[-/.]\s*\d{1,2}\s*[-/.]\s*\d{1,2}.*$/, '');
+  s = s.replace(/[（(]\s*\d{4}\s*[-/.]\s*\d{1,2}.*[)）]\s*$/, '');
+  s = s.replace(/\s*(承接|闭店|关店|已关|停业|已下架)\s*$/, '');
+  s = s.trim();
+  return s || raw;
+}
+
+/* 分组式账号表（很多店铺信息表就是这个结构）：
+     店铺            | 密码   | 使用人 | 岗位   | 绑定人
+     某某旗舰店       |        |        |        |            ← 只有店名 = 分组标题
+     某某旗舰店小杨   | ****  | 刘娟   | 组长   | 手机号（姓名） ← 下面的才是账号
+   判据：表头有「店铺」但没有任何「登录账号 / 账号」列 → 按分组解析。
+   返回 null 表示不是这种结构，走标准扁平解析。 */
+function impParseGroupedAccts(cells) {
+  const head = (cells[0] || []).map(c => impLookup(ACCT_HEAD_MAP, c));
+  const idx = {};
+  head.forEach((k, i) => { if (k && idx[k] == null) idx[k] = i; });
+  if (idx.shop == null || idx.login != null) return null;
+
+  const otherKeys = Object.keys(idx).filter(k => k !== 'shop' && k !== '__skip');
+  const rows = [], skip = [];
+  let curShop = '', groups = 0;
+
+  for (let i = 1; i < cells.length; i++) {
+    const line = cells[i] || [];
+    const first = impS(line[idx.shop]);
+    if (!first) continue;
+    if (/^合计|^小计|^总计/.test(first)) continue;
+
+    const rest = otherKeys.map(k => impS(line[idx[k]]));
+    const isGroup = rest.every(v => v === '');
+    if (isGroup) {
+      curShop = impGroupShopName(first);
+      groups++;
+      continue;
+    }
+    if (!curShop) { skip.push(i + 1); continue; }
+
+    const get = k => (idx[k] == null ? '' : impS(line[idx[k]]));
+    rows.push({
+      shop: curShop,
+      role: impRole(get('role')),
+      login: first,
+      binder: impBinderName(get('binder')),
+      tail: impTail(get('tail') || get('binder')),
+      owner: get('owner'),
+      post: get('post'),
+      status: impStatus(get('status')),
+      note: get('note')
+    });
+  }
+  return { rows, skip, groups };
+}
+
 /* 空值判断：0 与 '0' 都算有值 */
 const impBlank = v => v == null || impS(v) === '';
 
@@ -209,8 +282,8 @@ function impNormAccts(raw) {
       shop: shop,
       role: impRole(o.role),
       login: login,
-      binder: impS(o.binder),
-      tail: impTail(o.tail),
+      binder: impBinderName(o.binder),
+      tail: impTail(o.tail) || impTail(o.binder),
       owner: impS(o.owner),
       post: impS(o.post),
       status: impStatus(o.status),
@@ -354,7 +427,7 @@ function impPreviewStores(root) {
   if (!impState.cells) {
     box.innerHTML = obj === 'shops'
       ? '还没有读到内容。选一个文件，或切到「粘贴表格」把 Excel 里的表贴进来。<br>需要的列：<b>店铺名称</b>（必填）、平台、标签、负责人、绑定人、备注。'
-      : '还没有读到内容。选一个文件，或切到「粘贴表格」。<br>需要的列：<b>店铺名称 + 登录账号</b>（必填）、角色、绑定人、尾号、使用人、岗位、状态。';
+      : '还没有读到内容。选一个文件，或切到「粘贴表格」。<br>需要的列：<b>店铺名称 + 登录账号</b>（必填）、角色、绑定人、尾号、使用人、岗位、状态。<br>也支持「店铺分组」式表格：一行只写店名做分组，下面的行在店铺列写账号名，会自动归到该店。密码列会被忽略。';
     return;
   }
 
@@ -362,7 +435,16 @@ function impPreviewStores(root) {
   const raw = impMapRows(impState.cells, map);
   if (raw.err) { box.innerHTML = '<span class="bad">' + esc(raw.err) + '</span>'; return; }
 
-  const norm = obj === 'shops' ? impNormShops(raw.rows) : impNormAccts(raw.rows);
+  let norm, modeNote = '';
+  if (obj === 'accounts') {
+    const g = impParseGroupedAccts(impState.cells);
+    if (g) {
+      norm = { rows: g.rows, skip: g.skip };
+      modeNote = `已识别为「店铺分组」格式：<b>${g.groups}</b> 个店铺分组，账号按"店名 + 账号名"归位`
+        + (impState.cells[0] && impState.cells[0].some(c => /密码|password|pwd/i.test(impS(c))) ? '（密码列已忽略，工作台不保存密码）' : '');
+    }
+  }
+  if (!norm) norm = obj === 'shops' ? impNormShops(raw.rows) : impNormAccts(raw.rows);
   const rows = impDedupe(norm.rows, obj === 'shops' ? r => impKey(r.name) : r => impKey(r.shop) + '|' + impKey(r.login));
 
   if (!rows.length) { box.innerHTML = '<span class="bad">没有可导入的行（必填列是空的）</span>'; return; }
@@ -419,6 +501,7 @@ function impPreviewStores(root) {
 
   box.innerHTML = `${sheetLine}
     读到 <b>${norm.rows.length}</b> 条 · 去掉重复 <b>${dup}</b> 条<br>
+    ${modeNote ? modeNote + '<br>' : ''}
     将新建账号 <b class="ok">${willNew}</b> 条 · 补全已有账号 <b>${willFill}</b> 条（共填 ${fillCells} 个空字段）
     ${nsList.length ? `<br>其中 <b>${nsList.length}</b> 家店库里还没有，会一并建档：<span class="dim">${nsList.slice(0, 4).map(esc).join('、')}${nsList.length > 4 ? ' 等' : ''}</span>` : ''}
     ${norm.skip.length ? `<br><span class="bad">跳过 ${norm.skip.length} 行缺店铺名或登录账号（第 ${norm.skip.slice(0, 6).join('、')} 行）</span>` : ''}
