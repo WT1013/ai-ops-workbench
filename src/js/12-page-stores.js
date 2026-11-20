@@ -38,7 +38,8 @@ function renderStores() {
   const f = window.__storeFilter || 'all';
   const q = (window.__storeQ || '').trim().toLowerCase();
 
-  const acctsOf = s => acctMap[s.name] || [];
+  /* 按归一后的店名关联（大小写/空格不同也算同一家店，避免误判「缺账号」） */
+  const acctsOf = s => acctMap[agg.shopKey(s.name)] || [];
   const hasAcct = s => acctsOf(s).length > 0;
   const hasOwner = s => !!(s.owner || '').trim();
 

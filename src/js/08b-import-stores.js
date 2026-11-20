@@ -691,8 +691,9 @@ function doStoreImport(close) {
     store.db.shops.forEach(s => { const n = Number(s.order) || 0; if (n > maxOrder) maxOrder = n; });
 
     rows.forEach(r => {
-      if (!byShop[impKey(r.shop)]) {
-        const shopRec = {
+      let shopRec = byShop[impKey(r.shop)];
+      if (!shopRec) {
+        shopRec = {
           id: uid('s'), name: r.shop, platform: impS(r.plat) || '未分类', tag: '常规',
           owner: impS(r.shopowner), binder: '',
           order: ++maxOrder, auth: '', opstat: '运营中', third: '',
@@ -701,18 +702,21 @@ function doStoreImport(close) {
         store.db.shops.push(shopRec);
         byShop[impKey(r.shop)] = shopRec;
         autoShops++;
-      } else if (impS(r.shopowner) && impBlank(byShop[impKey(r.shop)].owner)) {
-        byShop[impKey(r.shop)].owner = impS(r.shopowner);   // 表里带店铺负责人就直接补上
-        byShop[impKey(r.shop)].__mt = now;
+      } else if (impS(r.shopowner) && impBlank(shopRec.owner)) {
+        shopRec.owner = impS(r.shopowner);   // 表里带店铺负责人就直接补上
+        shopRec.__mt = now;
       }
-      const key = impKey(r.shop) + '|' + impKey(r.login);
+      /* 店名落库统一成库里那家店的写法：文件写 pakeqi、库里是 PAKEQI 时，
+         直接存原文会让店铺页按店名关账号失败（显示「缺账号」，像是没导进去） */
+      const shopName = shopRec.name || r.shop;
+      const key = impKey(shopName) + '|' + impKey(r.login);
       const hit = byAcct[key];
       if (hit) {
         const n = impFillEmpty(hit, r, ['shop', 'login']);
         if (n) { filled++; fillCells += n; hit.__mt = now; }
         return;
       }
-      const rec = Object.assign({}, r, { id: uid('ac'), __mt: now, __src: 'ui' });
+      const rec = Object.assign({}, r, { shop: shopName, id: uid('ac'), __mt: now, __src: 'ui' });
       store.db.accounts.push(rec);
       byAcct[key] = rec;
       created++;

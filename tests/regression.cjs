@@ -124,7 +124,27 @@ const check = (name, ok, detail) => {
   check('账号表：绑定人 / 尾号（无密码列）', acct && acct.heads.indexOf('绑定人') >= 0 && acct.heads.indexOf('尾号') >= 0
     && acct.heads.indexOf('密码') < 0 && /^\d{4}$/.test(acct.rows[0][3]), acct && acct.heads);
 
-  /* 7) 控制台 */
+  /* 7) 店名大小写/空格不一致时，账号仍要挂到对应店铺
+        （线上事故：文件写 pakeqi、库里是 PAKEQI → 店铺页显示「缺账号」，像是没导进去） */
+  const caseChk = await page.evaluate(() => {
+    const OPS = window.__OPS__;
+    const st = OPS.store;
+    const shops = st.list('shops').filter(x => x.name && x.name.length > 3);
+    const target = shops.find(x => /pakeqi/i.test(x.name)) || shops[0];
+    const variant = target.name.replace(/[A-Za-z]+/, m => (m === m.toLowerCase() ? m.toUpperCase() : m.toLowerCase()));
+    st.db.accounts.push({
+      id: 'ac_case_test', shop: variant, login: '__case__:x', role: 'x', binder: '测试',
+      tail: '1234', owner: '', post: '客服', status: '启用', note: '', __src: 'ui'
+    });
+    OPS.render();
+    const hit = OPS.agg.accountsByShop()[OPS.agg.shopKey(target.name)] || [];
+    st.db.accounts = st.db.accounts.filter(a => a.id !== 'ac_case_test');
+    OPS.render();
+    return { name: target.name, variant, n: hit.length, found: hit.some(a => a.id === 'ac_case_test') };
+  });
+  check('店名大小写不同也能关联账号', caseChk.found && caseChk.name !== caseChk.variant, caseChk);
+
+  /* 8) 控制台 */
   check('控制台无报错', errs.length === 0, errs.slice(0, 3));
 
   await browser.close();

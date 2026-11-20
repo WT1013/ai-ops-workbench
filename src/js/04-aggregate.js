@@ -1,5 +1,14 @@
 /* ---------- 聚合 ---------- */
+
+/* 店名归一键：大小写、半角/全角空格都不影响「这条账号属于哪家店」。
+   文件里常写 pakeqi / PAKEQI、Panapopo / PANAPOPO，库里是品牌写法，
+   早期按原字符串精确匹配会把账号挂空，店铺页显示成「缺账号」。 */
+function shopKeyOf(name) {
+  return String(name == null ? '' : name).replace(/[\s\u3000]/g, '').toLowerCase();
+}
+
 const agg = {
+  shopKey(name) { return shopKeyOf(name); },
   shopNames() {
     const s = new Set(store.list('shops').map(x => x.name).filter(Boolean));
     store.list('metrics').forEach(m => m.shop && s.add(m.shop));
@@ -16,11 +25,11 @@ const agg = {
     store.list('accounts').forEach(a => { if (a.role) s.add(a.role); });
     return Array.from(s);
   },
-  /* 每店的账号列表 */
+  /* 每店的账号列表（键 = 归一后的店名，取值用 agg.shopKey(店名)） */
   accountsByShop() {
     const map = {};
     store.list('accounts').forEach(a => {
-      const k = a.shop;
+      const k = shopKeyOf(a.shop);
       if (!k) return;
       (map[k] = map[k] || []).push(a);
     });
