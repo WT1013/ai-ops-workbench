@@ -27,9 +27,11 @@ const ACCT_HEAD_MAP = {
   '登录账号': 'login', '账号': 'login', '登录名': 'login', 'login': 'login', '账号名': 'login',
   '绑定人': 'binder', 'binder': 'binder',
   '尾号': 'tail', 'tail': 'tail', '手机后四位': 'tail', '后四位': 'tail', '手机尾号': 'tail', '手机号': 'tail',
+  '绑定号码': 'tail', '绑定手机': 'tail', '手机号码': 'tail', '手机': 'tail', '电话': 'tail',
   '使用人': 'owner', 'owner': 'owner',
   '岗位': 'post', 'post': 'post', '职位': 'post',
   '状态': 'status', 'status': 'status', '启用状态': 'status',
+  '店铺负责人': 'shopowner', '负责人': 'shopowner', '店长': 'shopowner',
   '备注': 'note', 'note': 'note', '说明': 'note',
   /* 密码列：认出来但一律丢弃，工作台不保存密码 */
   '密码': '__skip', '登录密码': '__skip', 'password': '__skip', 'pwd': '__skip'
@@ -170,51 +172,163 @@ function impGroupShopName(v) {
   return s || raw;
 }
 
+/* 一张表里可能是「标题行 + 表头 + 数据」重复好几段（如 天猫段 / 训练师段 / 京东段），
+   也常有标题占掉第一行。这里按「一行里认出 ≥2 个列名」判定表头，把表切成若干段。 */
+function impSegments(cells, map) {
+  const segs = [];
+  let cur = null, lastText = '';
+  (cells || []).forEach((row, i) => {
+    const keys = (row || []).map(c => impLookup(map, c));
+    const hits = keys.filter(Boolean);
+    if (hits.length >= 2 && new Set(hits).size >= 2) {
+      const idx = {};
+      keys.forEach((k, j) => { if (k && idx[k] == null) idx[k] = j; });
+      cur = { title: lastText, headNo: i + 1, idx: idx, rows: [] };
+      segs.push(cur);
+      lastText = '';
+      return;
+    }
+    const cellsTxt = (row || []).map(c => impS(c)).filter(Boolean);
+    if (!cellsTxt.length) return;
+    if (!cur) { lastText = cellsTxt.join(' ').slice(0, 40); return; }  // 表头之前 = 标题行
+    cur.rows.push({ no: i + 1, line: row });
+  });
+  return segs;
+}
+
+/* 店铺名主干：去掉「官方旗舰店 / 京东自营 / 专营店」这类通用后缀，用于跟账号名比对 */
+const IMP_SHOP_GENERIC = /(官方旗舰店|旗舰店|专卖店|专营店|京东自营|自营|企业店|官方店|店|馆)/g;
+function impShopStem(name) {
+  return impKey(String(name || '').replace(IMP_SHOP_GENERIC, ''));
+}
+
+/* 表格里没有「店铺」列时，从登录账号反推店铺：
+   1) 冒号前缀         zeamo旗舰店:思思
+   2) 去掉末尾角色名   VEEVCC-惜云 → VEEVCC
+   反推出的名字必须能对上库里已有的店，否则宁可不猜（避免造垃圾店）。 */
+function impShopFromLogin(login, role, shops) {
+  const s = impS(login);
+  if (!s) return '';
+  const parts = s.split(/[:：]/);
+  if (parts.length > 1 && impS(parts[0])) return impGroupShopName(parts[0]);
+
+  let base = s;
+  const r = impS(role);
+  if (r && base.length > r.length && base.slice(-r.length) === r) base = base.slice(0, -r.length);
+  base = base.replace(/[-_·—\s]+$/, '');
+  const nBase = impKey(base);
+  if (nBase.length < 3) return '';
+
+  const list = shops || (typeof store !== 'undefined' ? store.list('shops') : []);
+  let best = '';
+  list.forEach(sh => {
+    const n = impKey(sh.name);
+    if (!n || n.length < 3) return;
+    const hit = n === nBase || n.indexOf(nBase) === 0 || nBase.indexOf(n) === 0;
+    if (hit && sh.name.length > best.length) best = sh.name;
+  });
+  if (best) return best;
+
+  /* 3) 用「去掉通用后缀的店名主干」比对：
+        KYOLENS医疗保健莹莹 → 主干 kyolens医疗保健 → KYOLENS医疗保健京东自营旗舰店
+        同一主干对上多家店视为歧义，不猜。 */
+  const nLogin = impKey(base.length >= 3 ? base : s);
+  const cands = [];
+  list.forEach(sh => {
+    const st = impShopStem(sh.name);
+    if (st.length >= 4 && nLogin.indexOf(st) === 0) cands.push({ name: sh.name, len: st.length });
+  });
+  if (!cands.length) return '';
+  const maxLen = Math.max.apply(null, cands.map(c => c.len));
+  const top = cands.filter(c => c.len === maxLen);
+  if (top.length === 1) return top[0].name;
+
+  /* 4) 主干撞车时用关键词区分：zeamo自营 → 只在名字带「自营」的那家唯一命中 */
+  const IMP_SHOP_TOKENS = ['自营', '医疗保健', '居家', '运动户外', '母婴', '个护健康',
+    '运动护具', '宠物', '医疗器械', '洗护', '护肤', '美妆', '旗舰'];
+  const toks = IMP_SHOP_TOKENS.filter(t => base.indexOf(t) >= 0);
+  if (toks.length) {
+    const f = top.filter(c => toks.some(t => c.name.indexOf(t) >= 0));
+    if (f.length === 1) return f[0].name;
+  }
+  return '';
+}
+
+/* 从每段表上方的标题猜平台：「天猫探域账号」「京东工作账号汇总」 */
+function impPlatFromTitle(t) {
+  const s = impS(t);
+  if (!s) return '';
+  if (/天猫|tmall/i.test(s)) return '天猫';
+  if (/京东|jingdong|\bjd\b/i.test(s)) return '京东';
+  if (/拼多多|pinduoduo|pdd/i.test(s)) return '拼多多';
+  if (/抖音|抖店|douyin/i.test(s)) return '抖音';
+  return '';
+}
+
 /* 分组式账号表（很多店铺信息表就是这个结构）：
      店铺            | 密码   | 使用人 | 岗位   | 绑定人
      某某旗舰店       |        |        |        |            ← 只有店名 = 分组标题
      某某旗舰店小杨   | ****  | 刘娟   | 组长   | 手机号（姓名） ← 下面的才是账号
-   判据：表头有「店铺」但没有任何「登录账号 / 账号」列 → 按分组解析。
-   返回 null 表示不是这种结构，走标准扁平解析。 */
-function impParseGroupedAccts(cells) {
-  const head = (cells[0] || []).map(c => impLookup(ACCT_HEAD_MAP, c));
-  const idx = {};
-  head.forEach((k, i) => { if (k && idx[k] == null) idx[k] = i; });
-  if (idx.shop == null || idx.login != null) return null;
+   统一处理四种情况：分组式 / 标准扁平式 / 没有店铺列 / 一段表里叠多段。 */
+function impParseAcctRows(cells) {
+  const segs = impSegments(cells, ACCT_HEAD_MAP);
+  const rows = [], skip = [], noShop = [];
+  const seen = {};
+  let groups = 0;
 
-  const otherKeys = Object.keys(idx).filter(k => k !== 'shop' && k !== '__skip');
-  const rows = [], skip = [];
-  let curShop = '', groups = 0;
+  segs.forEach(seg => {
+    const idx = seg.idx;
+    const grouped = idx.shop != null && idx.login == null;
+    const segPlat = impPlatFromTitle(seg.title);
+    let curShop = '';
 
-  for (let i = 1; i < cells.length; i++) {
-    const line = cells[i] || [];
-    const first = impS(line[idx.shop]);
-    if (!first) continue;
-    if (/^合计|^小计|^总计/.test(first)) continue;
+    seg.rows.forEach(({ no, line }) => {
+      const get = k => (idx[k] == null ? '' : impS(line[idx[k]]));
+      let shop = '', login = '';
 
-    const rest = otherKeys.map(k => impS(line[idx[k]]));
-    const isGroup = rest.every(v => v === '');
-    if (isGroup) {
-      curShop = impGroupShopName(first);
-      groups++;
-      continue;
-    }
-    if (!curShop) { skip.push(i + 1); continue; }
+      if (grouped) {
+        const first = impS(line[idx.shop]);
+        if (!first) return;
+        if (/^合计|^小计|^总计/.test(first)) return;
+        const others = Object.keys(idx)
+          .filter(k => k !== 'shop' && k !== '__skip')
+          .map(k => impS(line[idx[k]]));
+        if (others.every(v => v === '')) {           // 只有店名 = 分组标题
+          curShop = impGroupShopName(first);
+          groups++;
+          return;
+        }
+        if (!curShop) { skip.push(no); return; }
+        shop = curShop;
+        login = first;
+      } else {
+        login = get('login');
+        shop = get('shop');
+        if (!login) { skip.push(no); return; }
+        if (!shop) shop = impShopFromLogin(login, get('role'), null);
+        if (!shop) { noShop.push({ no: no, login: login }); return; }
+      }
 
-    const get = k => (idx[k] == null ? '' : impS(line[idx[k]]));
-    rows.push({
-      shop: curShop,
-      role: impRole(get('role')),
-      login: first,
-      binder: impBinderName(get('binder')),
-      tail: impTail(get('tail') || get('binder')),
-      owner: get('owner'),
-      post: get('post'),
-      status: impStatus(get('status')),
-      note: get('note')
+      const key = impKey(shop) + '|' + impKey(login);
+      if (seen[key]) return;
+      seen[key] = 1;
+      rows.push({
+        shop: shop,
+        role: impRole(get('role')),
+        login: login,
+        binder: impBinderName(get('binder')),
+        tail: impTail(get('tail') || get('binder')),
+        owner: get('owner'),
+        post: get('post'),
+        status: impStatus(get('status')),
+        note: get('note'),
+        shopowner: get('shopowner'),
+        plat: segPlat
+      });
     });
-  }
-  return { rows, skip, groups };
+  });
+
+  return { rows, skip, noShop, groups, segs: segs.length };
 }
 
 /* 空值判断：0 与 '0' 都算有值 */
@@ -233,23 +347,22 @@ function impFillEmpty(rec, patch, skip) {
 
 /* ---------- 解析成记录 ---------- */
 function impMapRows(cells, map) {
-  const head = (cells[0] || []).map(c => impLookup(map, c));
-  const idx = {};
-  head.forEach((k, i) => { if (k && idx[k] == null) idx[k] = i; });
-  const got = Object.keys(idx);
-  if (!got.length) return { rows: [], err: '表头一行都没认出来，请检查列名' };
+  const segs = impSegments(cells, map);
+  if (!segs.length) return { rows: [], err: '表头一行都没认出来，请检查列名' };
 
   const rows = [], bad = [];
-  for (let i = 1; i < cells.length; i++) {
-    const line = cells[i] || [];
-    const first = impS(line[0]);
-    if (/^合计|^小计|^总计|^备注[:：]?$/.test(first)) continue;
-    const raw = {};
-    got.forEach(k => { raw[k] = impS(line[idx[k]]); });
-    if (!got.some(k => !impBlank(raw[k]))) continue;
-    rows.push(raw);
-  }
-  return { rows, bad, idx };
+  segs.forEach(seg => {
+    const got = Object.keys(seg.idx);
+    seg.rows.forEach(({ line }) => {
+      const first = impS(line[0]);
+      if (/^合计|^小计|^总计|^备注[:：]?$/.test(first)) return;
+      const raw = {};
+      got.forEach(k => { if (k !== '__skip') raw[k] = impS(line[seg.idx[k]]); });
+      if (!got.some(k => k !== '__skip' && !impBlank(raw[k]))) return;
+      rows.push(raw);
+    });
+  });
+  return { rows, bad, idx: segs[0].idx, segs: segs.length };
 }
 
 function impNormShops(raw) {
@@ -433,21 +546,34 @@ function impPreviewStores(root) {
 
   const map = obj === 'shops' ? SHOP_HEAD_MAP : ACCT_HEAD_MAP;
   const raw = impMapRows(impState.cells, map);
-  if (raw.err) { box.innerHTML = '<span class="bad">' + esc(raw.err) + '</span>'; return; }
 
-  let norm, modeNote = '';
+  let norm, modeNote = '', acctInfo = null;
   if (obj === 'accounts') {
-    const g = impParseGroupedAccts(impState.cells);
-    if (g) {
-      norm = { rows: g.rows, skip: g.skip };
-      modeNote = `已识别为「店铺分组」格式：<b>${g.groups}</b> 个店铺分组，账号按"店名 + 账号名"归位`
-        + (impState.cells[0] && impState.cells[0].some(c => /密码|password|pwd/i.test(impS(c))) ? '（密码列已忽略，工作台不保存密码）' : '');
+    acctInfo = impParseAcctRows(impState.cells);
+    if (acctInfo.rows.length) {
+      norm = { rows: acctInfo.rows, skip: acctInfo.skip.concat(acctInfo.noShop.map(x => x.no)) };
+      const bits = [];
+      if (acctInfo.segs > 1) bits.push(`这张表里认出 <b>${acctInfo.segs}</b> 段表（每段自己的表头）`);
+      if (acctInfo.groups) bits.push(`<b>${acctInfo.groups}</b> 个店铺分组`);
+      const headCells = (impState.cells[0] || []).some(c => /密码|password|pwd/i.test(impS(c)))
+        || (impState.cells[1] || []).some(c => /密码|password|pwd/i.test(impS(c)));
+      if (headCells) bits.push('密码列已忽略（工作台不保存密码）');
+      if (bits.length) modeNote = '识别结果：' + bits.join(' · ');
     }
   }
-  if (!norm) norm = obj === 'shops' ? impNormShops(raw.rows) : impNormAccts(raw.rows);
+  if (!norm) {
+    if (raw.err) { box.innerHTML = '<span class="bad">' + esc(raw.err) + '</span>'; return; }
+    norm = obj === 'shops' ? impNormShops(raw.rows) : impNormAccts(raw.rows);
+  }
   const rows = impDedupe(norm.rows, obj === 'shops' ? r => impKey(r.name) : r => impKey(r.shop) + '|' + impKey(r.login));
 
-  if (!rows.length) { box.innerHTML = '<span class="bad">没有可导入的行（必填列是空的）</span>'; return; }
+  if (!rows.length) {
+    const why = acctInfo && acctInfo.noShop.length
+      ? `认出了 ${acctInfo.noShop.length} 行账号，但看不出属于哪家店：${acctInfo.noShop.slice(0, 6).map(x => x.login).join('、')}… 在表里加一列「店铺」就能导。`
+      : '没有可导入的行（必填列是空的）';
+    box.innerHTML = '<span class="bad">' + esc(why) + '</span>';
+    return;
+  }
 
   const sheetLine = impState.names.length
     ? `工作表：<b>${esc(impState.sheet)}</b>${impState.names.length > 1 ? `（文件里还有 ${impState.names.filter(n => n !== impState.sheet).map(n => esc(n)).join('、')}）` : ''}<br>`
@@ -504,7 +630,7 @@ function impPreviewStores(root) {
     ${modeNote ? modeNote + '<br>' : ''}
     将新建账号 <b class="ok">${willNew}</b> 条 · 补全已有账号 <b>${willFill}</b> 条（共填 ${fillCells} 个空字段）
     ${nsList.length ? `<br>其中 <b>${nsList.length}</b> 家店库里还没有，会一并建档：<span class="dim">${nsList.slice(0, 4).map(esc).join('、')}${nsList.length > 4 ? ' 等' : ''}</span>` : ''}
-    ${norm.skip.length ? `<br><span class="bad">跳过 ${norm.skip.length} 行缺店铺名或登录账号（第 ${norm.skip.slice(0, 6).join('、')} 行）</span>` : ''}
+    ${norm.skip.length ? `<br><span class="bad">跳过 ${norm.skip.length} 行：${acctInfo && acctInfo.skip.length ? `其中 ${acctInfo.skip.length} 行缺店铺名或登录账号；` : ''}${acctInfo && acctInfo.noShop.length ? `${acctInfo.noShop.length} 行看不出属于哪家店（${acctInfo.noShop.slice(0, 5).map(x => esc(x.login)).join('、')}${acctInfo.noShop.length > 5 ? ' 等' : ''}），加一列「店铺」就能导` : '缺店铺名或登录账号'}</span>` : ''}
     ${impMiniTable(rows, obj)}`;
 }
 
@@ -567,13 +693,17 @@ function doStoreImport(close) {
     rows.forEach(r => {
       if (!byShop[impKey(r.shop)]) {
         const shopRec = {
-          id: uid('s'), name: r.shop, platform: '未分类', tag: '常规', owner: '', binder: '',
+          id: uid('s'), name: r.shop, platform: impS(r.plat) || '未分类', tag: '常规',
+          owner: impS(r.shopowner), binder: '',
           order: ++maxOrder, auth: '', opstat: '运营中', third: '',
           note: '由账号导入自动建档，待补全', __mt: now, __src: 'ui'
         };
         store.db.shops.push(shopRec);
         byShop[impKey(r.shop)] = shopRec;
         autoShops++;
+      } else if (impS(r.shopowner) && impBlank(byShop[impKey(r.shop)].owner)) {
+        byShop[impKey(r.shop)].owner = impS(r.shopowner);   // 表里带店铺负责人就直接补上
+        byShop[impKey(r.shop)].__mt = now;
       }
       const key = impKey(r.shop) + '|' + impKey(r.login);
       const hit = byAcct[key];
