@@ -44,7 +44,6 @@ const auth = {
   async logout() {
     try { await cloud.auth.signOut(); } catch (e) {}
     this.session = null;
-    try { localStorage.removeItem(LS_EDIT); } catch (e) {}
     location.reload();
   }
 };
@@ -168,37 +167,63 @@ function hideLoading() { const el = $('#boot'); if (el) el.remove(); }
 /* 侧栏底部的「我」：名字（账号名优先）+ 云端状态 */
 function setUserCard() {
   const name = myName();
-  const av = $('#uAv'), nm = $('#uName'), rl = $('#uRole');
+  const av = $('#uAv'), nm = $('#uName');
   if (av) av.textContent = String(name).slice(0, 1);
   if (nm) nm.textContent = name;
-  if (rl) {
-    rl.textContent = !cloud
-      ? '本机模式'
-      : (store.cloudErr ? '未连云端 · 存本机' : '云端已同步');
-  }
+  updateSyncHint();
 }
 
-/* 拉取同事的最新改动：无弹窗、无正在编辑的输入、无待写入时才做，避免冲掉手上的内容 */
+/* 与云端对账：只有一种数据源（团队云端库），谁改所有人都看到。
+   每 15 秒查一次「指纹」，有变化才拉全量；本机有没推上去的改动时先推再拉，
+   不抢用户正在输入的内容，不弹窗。 */
+const SYNC_POLL_MS = 15000;
 async function pullLatest(silent) {
-  if (!cloud || store._flushing) return false;
-  if (Date.now() - (store._lastWrite || 0) < 2000) return false;
+  if (!cloud) return false;
+  if (store._flushing) return false;
   if (document.querySelector('.modal-bd')) return false;
   const ae = document.activeElement;
   if (ae && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)) return false;
+
+  /* 本机还有没推上去的改动：先推，推不上去就别拉，避免把自己刚改的冲掉 */
+  if (store._dirty) {
+    try { await store.flush(); } catch (e) {}
+    if (store._dirty) return false;
+  }
+
+  let sig = '';
+  try { sig = await store.probe(); }
+  catch (e) { store.cloudErr = (e && e.message) || String(e); return false; }
+  if (sig && sig === store._probeSig) { store._syncedAt = Date.now(); updateSyncHint(); return false; }
+
   const snap = JSON.stringify(store.db) + '|' + JSON.stringify(store.cfg);
   const oldCode = JSON.stringify(store.code);
-  try { await store.hydrate({ noSeed: true }); } catch (e) { return false; }
+  try { await store.hydrate({ noSeed: true }); }
+  catch (e) { store.cloudErr = (e && e.message) || String(e); return false; }
+  store._probeSig = sig;
+  store._syncedAt = Date.now();
   await store.loadTeam();
-  /* 云端拿到的是「界面改过的」部分，再把 CSV 数据源合回来（CSV 只覆盖更旧的记录） */
-  if (typeof mergeCsvData === 'function') mergeCsvData();
   applyTexts();
   if (JSON.stringify(store.code) !== oldCode) applyUserCode();
-  if (snap === JSON.stringify(store.db) + '|' + JSON.stringify(store.cfg)) return false;
-  if (!store.cloudErr) hideCloudNotice();
-  render();
+  store.cacheLocal();
   setUserCard();
-  if (!silent) toast('已同步同事的最新改动', 'ok');
-  return true;
+
+  const changed = snap !== JSON.stringify(store.db) + '|' + JSON.stringify(store.cfg);
+  if (!store.cloudErr) hideCloudNotice();
+  if (changed) render();
+  updateSyncHint();
+  if (changed && !silent) toast('已同步同事的最新改动', 'ok');
+  return changed;
+}
+
+/* 侧栏「我」下面那行：云端同步状态 + 上次对齐时间 */
+function updateSyncHint() {
+  const rl = $('#uRole');
+  if (!rl) return;
+  if (!cloud) { rl.textContent = '本机模式'; return; }
+  if (store.cloudErr) { rl.textContent = '未连云端 · 存本机'; return; }
+  const t = store._syncedAt;
+  rl.textContent = '云端已同步' + (t ? ' · ' + agoText(t) : '');
+  rl.title = '所有人共用同一份云端数据，每 ' + Math.round(SYNC_POLL_MS / 1000) + ' 秒自动对账一次';
 }
 
 /* 云端未就绪时的常驻提示条 */
@@ -252,19 +277,20 @@ async function retryCloud() {
   else toast('云端已接通，团队数据已同步', 'ok');
 }
 
-/* 登录成功后：解锁编辑 → 同步数据 → 起界面 */
+/* 登录成功后：同步数据 → 起界面。登录即成员，读写一律放行 */
 async function enterApp(session) {
   if (!session) return;
   store.session = session;
-  setEditMode(true, true);   /* 登录 = 成员，直接可编辑 */
   const g = $('#gate'); if (g) g.remove();
   showLoading('正在同步团队数据…');
   let r = null;
   try { r = await store.hydrate(); }
   catch (e) { r = null; store.cloudErr = (e && e.message) || String(e); }
   await store.loadTeam();
-  /* 数据源：先把 CSV 合进来再画第一帧，避免先闪一下旧数据 */
-  try { await loadDataCsv(true); mergeCsvData(); } catch (e) {}
+  /* 数据源只在云端还没有数据时用来播种，避免把界面上删掉的行又从 CSV 补回来 */
+  try { await loadDataCsv(true); mergeCsvData('auto'); } catch (e) {}
+  try { store._probeSig = await store.probe(); } catch (e) {}
+  store._syncedAt = Date.now();
   hideLoading();
   setUserCard();
   startApp();
@@ -304,9 +330,12 @@ function startApp() {
 
   go('signal');
 
-  /* 团队协作：每 60 秒与云端对一次，切回标签页时立刻对一次 */
-  setInterval(() => { if (!document.hidden) pullLatest(false); }, 60000);
+  /* 团队协作：每 15 秒对一次指纹，切回标签页 / 网络恢复时立刻对一次 */
+  setInterval(() => { if (!document.hidden) pullLatest(true); }, SYNC_POLL_MS);
+  setInterval(() => { if (!document.hidden) updateSyncHint(); }, 30000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) pullLatest(true); });
+  window.addEventListener('online', () => pullLatest(false));
+  window.addEventListener('focus', () => pullLatest(true));
 
   /* 首帧先无动画落位，下一帧再淡入并恢复过渡，避免滑块从左上方飞入 */
   requestAnimationFrame(() => {

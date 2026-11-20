@@ -86,12 +86,10 @@ const WB_CFG = {
   publishableKey: PROJECT_CFG.wb.publishableKey
 };
 
-/* 其余运行时配置：数据源轮询、编辑码、公共连接器 */
+/* 其余运行时配置：数据源轮询、公共连接器 */
 const OPS_CFG = {
   dataBase: PROJECT_CFG.data.base,
   pollSeconds: PROJECT_CFG.data.pollSeconds,
-  editSha: PROJECT_CFG.edit.codeSha256,
-  editHint: PROJECT_CFG.edit.hint,
   connectors: PROJECT_CFG.connectors,
   version: VERSION
 };

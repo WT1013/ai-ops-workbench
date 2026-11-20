@@ -107,29 +107,28 @@ function renderSettings() {
   <div class="block-title" style="margin-top:26px">数据源（团队 CSV）</div>
   <div class="set-panel">
     <div id="dataStatus"></div>
-    <div class="set-tip">CSV 放在仓库 <code>data/</code> 目录。成员改完提交，1–2 分钟发布后，所有人的页面会在 60 秒内自动刷新。<br>
-      合并规则：同一行「谁更晚谁生效」——界面改动时间晚于 CSV 发布时间就保留界面版本，否则用 CSV 覆盖；界面上新建的行不会被 CSV 删除。</div>
+    <div class="set-tip">云端库是唯一数据源：谁改都写进同一份，所有人 15 秒内看到。<br>
+      CSV 只在云端这一类还没有数据时用来播种，平时不会覆盖或补回任何行（删掉的不会被补回来）。<br>
+      确实要用 CSV 重建时，点下面的「从数据源重建」，同 id 的行会被 CSV 版本覆盖。</div>
     <div class="set-acts">
       <button class="btn" data-datarefresh>立即检查数据源</button>
+      <button class="btn" data-datarebuild>从数据源重建（覆盖同 id 行）</button>
     </div>
   </div>
 
-  <div class="block-title" style="margin-top:26px">访问与权限</div>
+  <div class="block-title" style="margin-top:26px">协作方式</div>
   <div class="set-panel">
     <table class="set-tbl"><tbody>
-      <tr><td class="set-lb">当前模式</td><td><b id="modeNow">—</b></td><td class="set-def">右上角徽标可切换</td></tr>
-      <tr><td class="set-lb">外部访问</td><td>只读预览</td><td class="set-def">链接发给谁，谁都能看，但改不了</td></tr>
-      <tr><td class="set-lb">项目成员</td><td>输入团队编辑码后可编辑</td><td class="set-def">数据 / 页面 / 文案 / 代码</td></tr>
+      <tr><td class="set-lb">谁能改</td><td><b>登录的组内成员都能增删改</b></td><td class="set-def">没有只读模式，也不需要编辑码</td></tr>
+      <tr><td class="set-lb">数据在哪</td><td>团队云端库（同一份）</td><td class="set-def">店铺 / 账号 / 指标 / 任务 都在这里</td></tr>
+      <tr><td class="set-lb">怎么同步</td><td>每 15 秒自动对账</td><td class="set-def">切回页面、网络恢复时立刻对一次</td></tr>
+      <tr><td class="set-lb">删除</td><td>删了就是删了</td><td class="set-def">别人下一次对账就会看到它消失，不会被本机旧数据带回</td></tr>
     </tbody></table>
   </div>
 
   <div class="set-tip" style="margin-top:22px">
     自定义代码存在云端，全组共用一份；谁改的会记在 <b>${esc((c.by || '—'))}</b>${c.at ? ' · ' + esc(agoText(c.at)) : ''}。
   </div>`;
-  setTimeout(() => {
-    renderDataStatus();
-    const m = document.getElementById('modeNow');
-    if (m) m.textContent = canEdit() ? '成员编辑' : '只读预览';
-  }, 0);
+  setTimeout(() => { renderDataStatus(); }, 0);
   return html;
 }

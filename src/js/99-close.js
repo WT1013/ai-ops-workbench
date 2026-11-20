@@ -4,7 +4,7 @@ window.__OPS__ = {
   KINDS: KINDS, PAGES: PAGES,
   TX: TX, applyTexts: applyTexts, applyUserCode: applyUserCode,
   canEdit: canEdit, setEditMode: setEditMode, tryUnlock: tryUnlock, dataCache: () => dataCache,
-  refreshDataCsv: refreshDataCsv, dataStatusText: dataStatusText,
+  refreshDataCsv: refreshDataCsv, mergeCsvData: mergeCsvData, dataStatusText: dataStatusText,
   $: $, $$: $$, esc: esc, uid: uid, num: num, openForm: openForm, openModal: openModal
 };
 })();

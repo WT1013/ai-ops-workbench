@@ -66,7 +66,6 @@ function cfgBar() {
 /* ---------- 表格单元格内联编辑（点一下就能改，像 Excel） ----------
    用法：<td class="cell" data-cell="集合:记录id:字段" data-type="num" data-maxlen="4"> */
 function openCellEdit(cell) {
-  if (!canEdit()) { denyWrite(); return; }
   const parts = String(cell.dataset.cell || '').split(':');
   if (parts.length < 3) return;
   const coll = parts[0], id = parts[1], field = parts[2];

@@ -652,7 +652,6 @@ function impMiniTable(rows, obj) {
 
 /* ---------- 执行 ---------- */
 function doStoreImport(close) {
-  if (!canEdit()) { denyWrite(); return; }
   const rows = impState.parsed;
   if (!rows || !rows.length) { toast('还没有可导入的内容', 'bad'); return; }
 

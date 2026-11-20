@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>AI运营组工作台 v6.7</title>
+<title>AI运营组工作台 v6.8</title>
 <link rel="icon" href="data:,">
 <style>
 /* ============ tokens ============ */
@@ -1258,35 +1258,7 @@ td.cell:hover{background:var(--panel3);box-shadow:inset 0 0 0 1px var(--line2)}
 td.cell.editing{background:var(--panel);box-shadow:inset 0 0 0 1px var(--amber);padding:2px 4px}
 .cell-inp{width:100%;min-width:60px;height:24px;padding:0 4px;border:none;border-radius:3px;background:transparent;color:var(--ink);font-size:inherit;font-family:inherit;outline:none}
 
-/* ---------- 访问模式徽标（只读预览 / 成员编辑） ---------- */
-.mode-pill{
-  height:24px;padding:0 10px;border-radius:12px;cursor:pointer;
-  border:1px solid var(--line2);background:var(--panel);color:var(--ink2);
-  font-size:11px;font-family:inherit;white-space:nowrap;line-height:22px;
-  transition:.12s linear;
-}
-.mode-pill:hover{border-color:var(--amber);color:var(--ink)}
-.mode-pill.on{background:var(--good-soft);border-color:var(--good);color:var(--good)}
-body.ro .mode-pill{background:var(--panel3)}
-
-/* 只读预览：隐藏所有写入口，保留完整浏览体验 */
-body.ro .acts,
-body.ro [data-new],
-body.ro [data-del],
-body.ro [data-edit],
-body.ro [data-done],
-body.ro [data-import],
-body.ro [data-clear-seed],
-body.ro [data-textreset],
-body.ro [data-codesave],
-body.ro [data-codeclear]{display:none !important}
-body.ro td.cell{cursor:default}
-body.ro td.cell:hover{background:transparent;box-shadow:none}
-body.ro .set-inp,
-body.ro .set-code,
-body.ro #cfgBar input,
-body.ro #cfgBar select{pointer-events:none;opacity:.65}
-body.ro .cfgbar-tip{display:none}
+/* 访问模式已取消：登录即可读写，全组共用一份云端数据 */
 
 </style>
 </head>
@@ -1326,7 +1298,6 @@ body.ro .cfgbar-tip{display:none}
       </button>
       <div class="crumb" id="crumb"></div>
       <div class="top-right">
-        <button class="mode-pill" id="modePill" type="button" title="访问模式">只读预览</button>
         <div class="stamp">数据截至 <b>09:00</b></div>
         <button class="icon-btn" id="theme" title="切换主题" aria-label="切换主题">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
@@ -1360,7 +1331,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
 }});if(w&&w.length)es(p,w,true,o.people||[])}catch(y){if(o.WTF)throw y}}function _o(e){return e.charAt(0)=="/"?e.slice(1):e}function Ao(e,r){Ue();r=r||{};yo(r);if(Ar(e,"META-INF/manifest.xml"))return po(e,r);if(Ar(e,"objectdata.xml"))return po(e,r);if(Ar(e,"Index/Document.iwa")){if(typeof Uint8Array=="undefined")throw new Error("NUMBERS file parsing requires Uint8Array support");if(typeof parse_numbers_iwa!="undefined"){if(e.FileIndex)return parse_numbers_iwa(e);var t=Ye.utils.cfb_new();Or(e).forEach(function(r){Mr(t,r,Dr(e,r))});return parse_numbers_iwa(t)}throw new Error("Unsupported NUMBERS file")}if(!Ar(e,"[Content_Types].xml")){if(Ar(e,"index.xml.gz"))throw new Error("Unsupported NUMBERS 08 file");if(Ar(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Error("Unsupported ZIP file")}var a=Or(e);var n=hn(Fr(e,"[Content_Types].xml"));var i=false;var s,l;if(n.workbooks.length===0){l="xl/workbook.xml";if(Er(e,l,true))n.workbooks.push(l)}if(n.workbooks.length===0){l="xl/workbook.bin";if(!Er(e,l,true))throw new Error("Could not find workbook");n.workbooks.push(l);i=true}if(n.workbooks[0].slice(-3)=="bin")i=true;var o={};var c={};if(!r.bookSheets&&!r.bookProps){As=[];if(n.sst)try{As=zl(Er(e,_o(n.sst)),n.sst,r)}catch(f){if(r.WTF)throw f}if(r.cellStyles&&n.themes.length)o=$l(Fr(e,n.themes[0].replace(/^\//,""),true)||"",n.themes[0],r);if(n.style)c=Bl(Er(e,_o(n.style)),n.style,o,r)}n.links.map(function(t){try{var a=vn(Fr(e,mn(_o(t))),t);return jl(Er(e,_o(t)),a,t,r)}catch(n){}});var u=Nl(Er(e,_o(n.workbooks[0])),n.workbooks[0],r);var h={},p="";if(n.coreprops.length){p=Er(e,_o(n.coreprops[0]),true);if(p)h=En(p);if(n.extprops.length!==0){p=Er(e,_o(n.extprops[0]),true);if(p)Pn(p,h,r)}}var d={};if(!r.bookSheets||r.bookProps){if(n.custprops.length!==0){p=Fr(e,_o(n.custprops[0]),true);if(p)d=Ln(p,r)}}var m={};if(r.bookSheets||r.bookProps){if(u.Sheets)s=u.Sheets.map(function O(e){return e.name});else if(h.Worksheets&&h.SheetNames.length>0)s=h.SheetNames;if(r.bookProps){m.Props=h;m.Custprops=d}if(r.bookSheets&&typeof s!=="undefined")m.SheetNames=s;if(r.bookSheets?m.SheetNames:r.bookProps)return m}s={};var v={};if(r.bookDeps&&n.calcchain)v=Wl(Er(e,_o(n.calcchain)),n.calcchain,r);var g=0;var b={};var w,y;{var k=u.Sheets;h.Worksheets=k.length;h.SheetNames=[];for(var x=0;x!=k.length;++x){h.SheetNames[x]=k[x].name}}var S=i?"bin":"xml";var C=n.workbooks[0].lastIndexOf("/");var _=(n.workbooks[0].slice(0,C+1)+"_rels/"+n.workbooks[0].slice(C+1)+".rels").replace(/^\//,"");if(!Ar(e,_))_="xl/_rels/workbook."+S+".rels";var A=vn(Fr(e,_,true),_.replace(/_rels.*/,"s5s"));if((n.metadata||[]).length>=1){r.xlmeta=Hl(Er(e,_o(n.metadata[0])),n.metadata[0],r)}if((n.people||[]).length>=1){r.people=is(Er(e,_o(n.people[0])),r)}if(A)A=So(A,u.Sheets);var T=Er(e,"xl/worksheets/sheet.xml",true)?1:0;e:for(g=0;g!=h.Worksheets;++g){var E="sheet";if(A&&A[g]){w="xl/"+A[g][1].replace(/[\/]?xl\//,"");if(!Ar(e,w))w=A[g][1];if(!Ar(e,w))w=_.replace(/_rels\/.*$/,"")+A[g][1];E=A[g][2]}else{w="xl/worksheets/sheet"+(g+1-T)+"."+S;w=w.replace(/sheet0\./,"sheet.")}y=w.replace(/^(.*)(\/)([^\/]*)$/,"$1/_rels/$3.rels");if(r&&r.sheets!=null)switch(typeof r.sheets){case"number":if(g!=r.sheets)continue e;break;case"string":if(h.SheetNames[g].toLowerCase()!=r.sheets.toLowerCase())continue e;break;default:if(Array.isArray&&Array.isArray(r.sheets)){var F=false;for(var D=0;D!=r.sheets.length;++D){if(typeof r.sheets[D]=="number"&&r.sheets[D]==g)F=1;if(typeof r.sheets[D]=="string"&&r.sheets[D].toLowerCase()==h.SheetNames[g].toLowerCase())F=1}if(!F)continue e};}Co(e,w,y,h.SheetNames[g],g,b,s,E,r,u,o,c)}m={Directory:n,Workbook:u,Props:h,Custprops:d,Deps:v,Sheets:s,SheetNames:h.SheetNames,Strings:As,Styles:c,Themes:o,SSF:gr(X)};if(r&&r.bookFiles){if(e.files){m.keys=a;m.files=e.files}else{m.keys=[];m.files={};e.FullPaths.forEach(function(r,t){r=r.replace(/^Root Entry[\/]/,"");m.keys.push(r);m.files[r]=e.FileIndex[t]})}}if(r&&r.bookVBA){if(n.vba.length>0)m.vbaraw=Er(e,_o(n.vba[0]),true);else if(n.defaults&&n.defaults.bin===ls)m.vbaraw=Er(e,"xl/vbaProject.bin",true)}return m}function To(e,r){var t=r||{};var a="Workbook",n=Ye.find(e,a);try{a="/!DataSpaces/Version";n=Ye.find(e,a);if(!n||!n.content)throw new Error("ECMA-376 Encrypted file missing "+a);parse_DataSpaceVersionInfo(n.content);a="/!DataSpaces/DataSpaceMap";n=Ye.find(e,a);if(!n||!n.content)throw new Error("ECMA-376 Encrypted file missing "+a);var i=parse_DataSpaceMap(n.content);if(i.length!==1||i[0].comps.length!==1||i[0].comps[0].t!==0||i[0].name!=="StrongEncryptionDataSpace"||i[0].comps[0].v!=="EncryptedPackage")throw new Error("ECMA-376 Encrypted file bad "+a);a="/!DataSpaces/DataSpaceInfo/StrongEncryptionDataSpace";n=Ye.find(e,a);if(!n||!n.content)throw new Error("ECMA-376 Encrypted file missing "+a);var s=parse_DataSpaceDefinition(n.content);if(s.length!=1||s[0]!="StrongEncryptionTransform")throw new Error("ECMA-376 Encrypted file bad "+a);a="/!DataSpaces/TransformInfo/StrongEncryptionTransform/!Primary";n=Ye.find(e,a);if(!n||!n.content)throw new Error("ECMA-376 Encrypted file missing "+a);parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Ye.find(e,a);if(!n||!n.content)throw new Error("ECMA-376 Encrypted file missing "+a);var o=parse_EncryptionInfo(n.content);a="/EncryptedPackage";n=Ye.find(e,a);if(!n||!n.content)throw new Error("ECMA-376 Encrypted file missing "+a);if(o[0]==4&&typeof decrypt_agile!=="undefined")return decrypt_agile(o[1],n.content,t.password||"",t);if(o[0]==2&&typeof decrypt_std76!=="undefined")return decrypt_std76(o[1],n.content,t.password||"",t);throw new Error("File is password-protected")}function Eo(e,r){if(r.bookType=="ods")return bo(e,r);if(r.bookType=="numbers")return write_numbers_iwa(e,r);if(r.bookType=="xlsb")return Fo(e,r);return Do(e,r)}function Fo(e,r){Zi=1024;if(e&&!e.SSF){e.SSF=gr(X)}if(e&&e.SSF){Ue();ze(e.SSF);r.revssf=ar(e.SSF);r.revssf[e.SSF[65535]]=0;r.ssf=e.SSF}r.rels={};r.wbrels={};r.Strings=[];r.Strings.Count=0;r.Strings.Unique=0;if(Es)r.revStrings=new Map;else{r.revStrings={};r.revStrings.foo=[];delete r.revStrings.foo}var t=r.bookType=="xlsb"?"bin":"xml";var a=fs.indexOf(r.bookType)>-1;var n=un();ko(r=r||{});var i=Nr();var s="",l=0;r.cellXfs=[];Ms(r.cellXfs,{},{revssf:{General:0}});if(!e.Props)e.Props={};s="docProps/core.xml";Mr(i,s,Dn(e.Props,r));n.coreprops.push(s);bn(r.rels,2,s,dn.CORE_PROPS);s="docProps/app.xml";if(e.Props&&e.Props.SheetNames){}else if(!e.Workbook||!e.Workbook.Sheets)e.Props.SheetNames=e.SheetNames;else{var o=[];for(var c=0;c<e.SheetNames.length;++c)if((e.Workbook.Sheets[c]||{}).Hidden!=2)o.push(e.SheetNames[c]);e.Props.SheetNames=o}e.Props.Worksheets=e.Props.SheetNames.length;Mr(i,s,In(e.Props,r));n.extprops.push(s);bn(r.rels,3,s,dn.EXT_PROPS);if(e.Custprops!==e.Props&&er(e.Custprops||{}).length>0){s="docProps/custom.xml";Mr(i,s,Bn(e.Custprops,r));n.custprops.push(s);bn(r.rels,4,s,dn.CUST_PROPS)}for(l=1;l<=e.SheetNames.length;++l){var f={"!id":{}};var u=e.Sheets[e.SheetNames[l-1]];var h=(u||{})["!type"]||"sheet";switch(h){case"chart":;default:s="xl/worksheets/sheet"+l+"."+t;Mr(i,s,Xl(l-1,s,r,e,f));n.sheets.push(s);bn(r.wbrels,-1,"worksheets/sheet"+l+"."+t,dn.WS[0]);}if(u){var p=u["!comments"];var d=false;var m="";if(p&&p.length>0){m="xl/comments"+l+"."+t;Mr(i,m,Kl(p,m,r));n.comments.push(m);bn(f,-1,"../comments"+l+"."+t,dn.CMNT);d=true}if(u["!legacy"]){if(d)Mr(i,"xl/drawings/vmlDrawing"+l+".vml",Qi(l,u["!comments"]))}delete u["!comments"];delete u["!legacy"]}if(f["!id"].rId1)Mr(i,mn(s),gn(f))}if(r.Strings!=null&&r.Strings.length>0){s="xl/sharedStrings."+t;Mr(i,s,Jl(r.Strings,s,r));n.strs.push(s);bn(r.wbrels,-1,"sharedStrings."+t,dn.SST)}s="xl/workbook."+t;Mr(i,s,Vl(e,s,r));n.workbooks.push(s);bn(r.rels,1,s,dn.WB);s="xl/theme/theme1.xml";Mr(i,s,Xi(e.Themes,r));n.themes.push(s);bn(r.wbrels,-1,"theme/theme1.xml",dn.THEME);s="xl/styles."+t;Mr(i,s,Yl(e,s,r));n.styles.push(s);bn(r.wbrels,-1,"styles."+t,dn.STY);if(e.vbaraw&&a){s="xl/vbaProject.bin";Mr(i,s,e.vbaraw);n.vba.push(s);bn(r.wbrels,-1,"vbaProject.bin",dn.VBA)}s="xl/metadata."+t;Mr(i,s,ql(s));n.metadata.push(s);bn(r.wbrels,-1,"metadata."+t,dn.XLMETA);Mr(i,"[Content_Types].xml",pn(n,r));Mr(i,"_rels/.rels",gn(r.rels));Mr(i,"xl/_rels/workbook."+t+".rels",gn(r.wbrels));delete r.revssf;delete r.ssf;return i}function Do(e,r){Zi=1024;if(e&&!e.SSF){e.SSF=gr(X)}if(e&&e.SSF){Ue();ze(e.SSF);r.revssf=ar(e.SSF);r.revssf[e.SSF[65535]]=0;r.ssf=e.SSF}r.rels={};r.wbrels={};r.Strings=[];r.Strings.Count=0;r.Strings.Unique=0;if(Es)r.revStrings=new Map;else{r.revStrings={};r.revStrings.foo=[];delete r.revStrings.foo}var t="xml";var a=fs.indexOf(r.bookType)>-1;var n=un();ko(r=r||{});var i=Nr();var s="",l=0;r.cellXfs=[];Ms(r.cellXfs,{},{revssf:{General:0}});if(!e.Props)e.Props={};s="docProps/core.xml";Mr(i,s,Dn(e.Props,r));n.coreprops.push(s);bn(r.rels,2,s,dn.CORE_PROPS);s="docProps/app.xml";if(e.Props&&e.Props.SheetNames){}else if(!e.Workbook||!e.Workbook.Sheets)e.Props.SheetNames=e.SheetNames;else{var o=[];for(var c=0;c<e.SheetNames.length;++c)if((e.Workbook.Sheets[c]||{}).Hidden!=2)o.push(e.SheetNames[c]);e.Props.SheetNames=o}e.Props.Worksheets=e.Props.SheetNames.length;Mr(i,s,In(e.Props,r));n.extprops.push(s);bn(r.rels,3,s,dn.EXT_PROPS);if(e.Custprops!==e.Props&&er(e.Custprops||{}).length>0){s="docProps/custom.xml";Mr(i,s,Bn(e.Custprops,r));n.custprops.push(s);bn(r.rels,4,s,dn.CUST_PROPS)}var f=["SheetJ5"];r.tcid=0;for(l=1;l<=e.SheetNames.length;++l){var u={"!id":{}};var h=e.Sheets[e.SheetNames[l-1]];var p=(h||{})["!type"]||"sheet";switch(p){case"chart":;default:s="xl/worksheets/sheet"+l+"."+t;Mr(i,s,pl(l-1,r,e,u));n.sheets.push(s);bn(r.wbrels,-1,"worksheets/sheet"+l+"."+t,dn.WS[0]);}if(h){var d=h["!comments"];var m=false;var v="";if(d&&d.length>0){var g=false;d.forEach(function(e){e[1].forEach(function(e){if(e.T==true)g=true})});if(g){v="xl/threadedComments/threadedComment"+l+"."+t;Mr(i,v,ns(d,f,r));n.threadedcomments.push(v);bn(u,-1,"../threadedComments/threadedComment"+l+"."+t,dn.TCMNT)}v="xl/comments"+l+"."+t;Mr(i,v,ts(d,r));n.comments.push(v);bn(u,-1,"../comments"+l+"."+t,dn.CMNT);m=true}if(h["!legacy"]){if(m)Mr(i,"xl/drawings/vmlDrawing"+l+".vml",Qi(l,h["!comments"]))}delete h["!comments"];delete h["!legacy"]}if(u["!id"].rId1)Mr(i,mn(s),gn(u))}if(r.Strings!=null&&r.Strings.length>0){s="xl/sharedStrings."+t;Mr(i,s,ni(r.Strings,r));n.strs.push(s);bn(r.wbrels,-1,"sharedStrings."+t,dn.SST)}s="xl/workbook."+t;Mr(i,s,Ml(e,r));n.workbooks.push(s);bn(r.rels,1,s,dn.WB);s="xl/theme/theme1.xml";Mr(i,s,Xi(e.Themes,r));n.themes.push(s);bn(r.wbrels,-1,"theme/theme1.xml",dn.THEME);s="xl/styles."+t;Mr(i,s,Ii(e,r));n.styles.push(s);bn(r.wbrels,-1,"styles."+t,dn.STY);if(e.vbaraw&&a){s="xl/vbaProject.bin";Mr(i,s,e.vbaraw);n.vba.push(s);bn(r.wbrels,-1,"vbaProject.bin",dn.VBA)}s="xl/metadata."+t;Mr(i,s,Yi());n.metadata.push(s);bn(r.wbrels,-1,"metadata."+t,dn.XLMETA);if(f.length>1){s="xl/persons/person.xml";Mr(i,s,ss(f,r));n.people.push(s);bn(r.wbrels,-1,"persons/person.xml",dn.PEOPLE)}Mr(i,"[Content_Types].xml",pn(n,r));Mr(i,"_rels/.rels",gn(r.rels));Mr(i,"xl/_rels/workbook."+t+".rels",gn(r.wbrels));delete r.revssf;delete r.ssf;return i}function Oo(e,r){var t="";switch((r||{}).type||"base64"){case"buffer":return[e[0],e[1],e[2],e[3],e[4],e[5],e[6],e[7]];case"base64":t=w(e.slice(0,12));break;case"binary":t=e;break;case"array":return[e[0],e[1],e[2],e[3],e[4],e[5],e[6],e[7]];default:throw new Error("Unrecognized type "+(r&&r.type||"undefined"));}return[t.charCodeAt(0),t.charCodeAt(1),t.charCodeAt(2),t.charCodeAt(3),t.charCodeAt(4),t.charCodeAt(5),t.charCodeAt(6),t.charCodeAt(7)]}function Mo(e,r){if(Ye.find(e,"EncryptedPackage"))return To(e,r);return parse_xlscfb(e,r)}function No(e,r){var t,a=e;var n=r||{};if(!n.type)n.type=y&&Buffer.isBuffer(e)?"buffer":"base64";t=Pr(a,n);return Ao(t,n)}function Po(e,r){var t=0;e:while(t<e.length)switch(e.charCodeAt(t)){case 10:;case 13:;case 32:++t;break;case 60:return parse_xlml(e.slice(t),r);default:break e;}return Hn.to_workbook(e,r)}function Io(e,r){var t="",a=Oo(e,r);switch(r.type){case"base64":t=w(e);break;case"binary":t=e;break;case"buffer":t=e.toString("binary");break;case"array":t=vr(e);break;default:throw new Error("Unrecognized type "+r.type);}if(a[0]==239&&a[1]==187&&a[2]==191)t=ot(t);r.type="binary";return Po(t,r)}function Ro(e,r){var t=e;if(r.type=="base64")t=w(t);t=$cptable.utils.decode(1200,t.slice(2),"str");r.type="binary";return Po(t,r)}function Lo(e){return!e.match(/[^\x00-\x7F]/)?e:ct(e)}function Bo(e,r,t,a){if(a){t.type="string";return Hn.to_workbook(e,t)}return Hn.to_workbook(r,t)}function $o(e,r){o();var t=r||{};if(typeof ArrayBuffer!=="undefined"&&e instanceof ArrayBuffer)return $o(new Uint8Array(e),(t=gr(t),t.type="array",t));if(typeof Uint8Array!=="undefined"&&e instanceof Uint8Array&&!t.type)t.type=typeof Deno!=="undefined"?"buffer":"array";var a=e,n=[0,0,0,0],i=false;if(t.cellStyles){t.cellNF=true;t.sheetStubs=true}Ts={};if(t.dateNF)Ts.dateNF=t.dateNF;if(!t.type)t.type=y&&Buffer.isBuffer(e)?"buffer":"base64";if(t.type=="file"){t.type=y?"buffer":"binary";a=Qe(e);if(typeof Uint8Array!=="undefined"&&!y)t.type="array"}if(t.type=="string"){i=true;t.type="binary";t.codepage=65001;a=Lo(e)}if(t.type=="array"&&typeof Uint8Array!=="undefined"&&e instanceof Uint8Array&&typeof ArrayBuffer!=="undefined"){var s=new ArrayBuffer(3),l=new Uint8Array(s);l.foo="bar";if(!l.foo){t=gr(t);t.type="array";return $o(E(a),t)}}switch((n=Oo(a,t))[0]){case 208:if(n[1]===207&&n[2]===17&&n[3]===224&&n[4]===161&&n[5]===177&&n[6]===26&&n[7]===225)return Mo(Ye.read(a,t),t);break;case 9:if(n[1]<=8)return parse_xlscfb(a,t);break;case 60:return parse_xlml(a,t);case 73:if(n[1]===73&&n[2]===42&&n[3]===0)throw new Error("TIFF Image File is not a spreadsheet");if(n[1]===68)return Vn(a,t);break;case 84:if(n[1]===65&&n[2]===66&&n[3]===76)return Wn.to_workbook(a,t);break;case 80:return n[1]===75&&n[2]<9&&n[3]<9?No(a,t):Bo(e,a,t,i);case 239:return n[3]===60?parse_xlml(a,t):Bo(e,a,t,i);case 255:if(n[1]===254){return Ro(a,t)}else if(n[1]===0&&n[2]===2&&n[3]===0)return WK_.to_workbook(a,t);break;case 0:if(n[1]===0){if(n[2]>=2&&n[3]===0)return WK_.to_workbook(a,t);if(n[2]===0&&(n[3]===8||n[3]===9))return WK_.to_workbook(a,t)}break;case 3:;case 131:;case 139:;case 140:return zn.to_workbook(a,t);case 123:if(n[1]===92&&n[2]===114&&n[3]===116)return RTF.to_workbook(a,t);break;case 10:;case 13:;case 32:return Io(a,t);case 137:if(n[1]===80&&n[2]===78&&n[3]===71)throw new Error("PNG Image File is not a spreadsheet");break;}if($n.indexOf(n[0])>-1&&n[2]<=12&&n[3]<=31)return zn.to_workbook(a,t);return Bo(e,a,t,i)}function zo(e,r){var t=r||{};t.type="file";return $o(e,t)}function Uo(e,r){switch(r.type){case"base64":;case"binary":break;case"buffer":;case"array":r.type="";break;case"file":return Ze(r.file,Ye.write(e,{type:y?"buffer":""}));case"string":throw new Error("'string' output type invalid for '"+r.bookType+"' files");default:throw new Error("Unrecognized type "+r.type);}return Ye.write(e,r)}function Wo(e,r){var t=gr(r||{});var a=Eo(e,t);return Ho(a,t)}function jo(e,r){var t=gr(r||{});var a=Do(e,t);return Ho(a,t)}function Ho(e,r){var t={};var a=y?"nodebuffer":typeof Uint8Array!=="undefined"?"array":"string";if(r.compression)t.compression="DEFLATE";if(r.password)t.type=a;else switch(r.type){case"base64":t.type="base64";break;case"binary":t.type="string";break;case"string":throw new Error("'string' output type invalid for '"+r.bookType+"' files");case"buffer":;case"file":t.type=a;break;default:throw new Error("Unrecognized type "+r.type);}var n=e.FullPaths?Ye.write(e,{fileType:"zip",type:{nodebuffer:"buffer",string:"binary"}[t.type]||t.type,compression:!!r.compression}):e.generate(t);if(typeof Deno!=="undefined"){if(typeof n=="string"){if(r.type=="binary"||r.type=="base64")return n;n=new Uint8Array(_(n))}}if(r.password&&typeof encrypt_agile!=="undefined")return Uo(encrypt_agile(n,r.password),r);if(r.type==="file")return Ze(r.file,n);return r.type=="string"?ot(n):n}function Vo(e,r){var t=r||{};var a=write_xlscfb(e,t);return Uo(a,t)}function Xo(e,r,t){if(!t)t="";var a=t+e;switch(r.type){case"base64":return b(ct(a));case"binary":return ct(a);case"string":return e;case"file":return Ze(r.file,a,"utf8");case"buffer":{if(y)return k(a,"utf8");else if(typeof TextEncoder!=="undefined")return(new TextEncoder).encode(a);else return Xo(a,{type:"binary"}).split("").map(function(e){return e.charCodeAt(0)})};}throw new Error("Unrecognized type "+r.type)}function Go(e,r){switch(r.type){case"base64":return b(e);case"binary":return e;case"string":return e;case"file":return Ze(r.file,e,"binary");case"buffer":{if(y)return k(e,"binary");else return e.split("").map(function(e){return e.charCodeAt(0)})};}throw new Error("Unrecognized type "+r.type)}function Yo(e,r){switch(r.type){case"string":;case"base64":;case"binary":var t="";for(var a=0;a<e.length;++a)t+=String.fromCharCode(e[a]);return r.type=="base64"?b(t):r.type=="string"?ot(t):t;case"file":return Ze(r.file,e);case"buffer":return e;default:throw new Error("Unrecognized type "+r.type);}}function Jo(e,r){o();Fl(e);var t=gr(r||{});if(t.cellStyles){t.cellNF=true;t.sheetStubs=true}if(t.type=="array"){t.type="binary";var a=Jo(e,t);t.type="array";return _(a)}return jo(e,t)}function Ko(e,r){o();Fl(e);var t=gr(r||{});if(t.cellStyles){t.cellNF=true;t.sheetStubs=true}if(t.type=="array"){t.type="binary";var a=Ko(e,t);t.type="array";return _(a)}var n=0;if(t.sheet){if(typeof t.sheet=="number")n=t.sheet;else n=e.SheetNames.indexOf(t.sheet);if(!e.SheetNames[n])throw new Error("Sheet not found: "+t.sheet+" : "+typeof t.sheet)}switch(t.bookType||"xlsb"){case"xml":;case"xlml":return Xo(write_xlml(e,t),t);case"slk":;case"sylk":return Xo(Un.from_sheet(e.Sheets[e.SheetNames[n]],t),t);case"htm":;case"html":return Xo(no(e.Sheets[e.SheetNames[n]],t),t);case"txt":return Go(sc(e.Sheets[e.SheetNames[n]],t),t);case"csv":return Xo(ic(e.Sheets[e.SheetNames[n]],t),t,"\ufeff");case"dif":return Xo(Wn.from_sheet(e.Sheets[e.SheetNames[n]],t),t);case"dbf":return Yo(zn.from_sheet(e.Sheets[e.SheetNames[n]],t),t);case"prn":return Xo(Hn.from_sheet(e.Sheets[e.SheetNames[n]],t),t);case"rtf":return Xo(RTF.from_sheet(e.Sheets[e.SheetNames[n]],t),t);case"eth":return Xo(jn.from_sheet(e.Sheets[e.SheetNames[n]],t),t);case"fods":return Xo(bo(e,t),t);case"wk1":return Yo(WK_.sheet_to_wk1(e.Sheets[e.SheetNames[n]],t),t);case"wk3":return Yo(WK_.book_to_wk3(e,t),t);case"biff2":if(!t.biff)t.biff=2;case"biff3":if(!t.biff)t.biff=3;case"biff4":if(!t.biff)t.biff=4;return Yo(write_biff_buf(e,t),t);case"biff5":if(!t.biff)t.biff=5;case"biff8":;case"xla":;case"xls":if(!t.biff)t.biff=8;return Vo(e,t);case"xlsx":;case"xlsm":;case"xlam":;case"xlsb":;case"numbers":;case"ods":return Wo(e,t);default:throw new Error("Unrecognized bookType |"+t.bookType+"|");}}function qo(e){if(e.bookType)return;var r={xls:"biff8",htm:"html",slk:"sylk",socialcalc:"eth",Sh33tJS:"WTF"};var t=e.file.slice(e.file.lastIndexOf(".")).toLowerCase();if(t.match(/^\.[a-z]+$/))e.bookType=t.slice(1);e.bookType=r[e.bookType]||e.bookType}function Zo(e,r,t){var a=t||{};a.type="file";a.file=r;qo(a);return Ko(e,a)}function Qo(e,r,t){var a=t||{};a.type="file";a.file=r;qo(a);return Jo(e,a)}function ec(e,r,t,a){var n=t||{};n.type="file";n.file=e;qo(n);n.type="buffer";var i=a;if(!(i instanceof Function))i=t;return Je.writeFile(e,Ko(r,n),i)}function rc(e,r,t,a,n,i,s,l){var o=ya(t);var c=l.defval,f=l.raw||!Object.prototype.hasOwnProperty.call(l,"raw");var u=true;var h=n===1?[]:{};if(n!==1){if(Object.defineProperty)try{Object.defineProperty(h,"__rowNum__",{value:t,enumerable:false})}catch(p){h.__rowNum__=t}else h.__rowNum__=t}if(!s||e[t])for(var d=r.s.c;d<=r.e.c;++d){var m=s?e[t][d]:e[a[d]+o];if(m===undefined||m.t===undefined){if(c===undefined)continue;if(i[d]!=null){h[i[d]]=c}continue}var v=m.v;switch(m.t){case"z":if(v==null)break;continue;case"e":v=v==0?null:void 0;break;case"s":;case"d":;case"b":;case"n":break;default:throw new Error("unrecognized type "+m.t);}if(i[d]!=null){if(v==null){if(m.t=="e"&&v===null)h[i[d]]=null;else if(c!==undefined)h[i[d]]=c;else if(f&&v===null)h[i[d]]=null;else continue}else{h[i[d]]=f&&(m.t!=="n"||m.t==="n"&&l.rawNumbers!==false)?v:Pa(m,v,l)}if(v!=null)u=false}}return{row:h,isempty:u}}function tc(e,r){if(e==null||e["!ref"]==null)return[];var t={t:"n",v:0},a=0,n=1,i=[],s=0,l="";var o={s:{r:0,c:0},e:{r:0,c:0}};var c=r||{};var f=c.range!=null?c.range:e["!ref"];if(c.header===1)a=1;else if(c.header==="A")a=2;else if(Array.isArray(c.header))a=3;else if(c.header==null)a=0;switch(typeof f){case"string":o=Ma(f);break;case"number":o=Ma(e["!ref"]);o.s.r=f;break;default:o=f;}if(a>0)n=0;var u=ya(o.s.r);var h=[];var p=[];var d=0,m=0;var v=Array.isArray(e);var g=o.s.r,b=0;var w={};if(v&&!e[g])e[g]=[];var y=c.skipHidden&&e["!cols"]||[];var k=c.skipHidden&&e["!rows"]||[];for(b=o.s.c;b<=o.e.c;++b){if((y[b]||{}).hidden)continue;h[b]=Ca(b);t=v?e[g][b]:e[h[b]+u];switch(a){case 1:i[b]=b-o.s.c;break;case 2:i[b]=h[b];break;case 3:i[b]=c.header[b-o.s.c];break;default:if(t==null)t={w:"__EMPTY",t:"s"};l=s=Pa(t,null,c);m=w[s]||0;if(!m)w[s]=1;else{do{l=s+"_"+m++}while(w[l]);w[s]=m;w[l]=1}i[b]=l;}}for(g=o.s.r+n;g<=o.e.r;++g){if((k[g]||{}).hidden)continue;var x=rc(e,o,g,h,a,i,v,c);if(x.isempty===false||(a===1?c.blankrows!==false:!!c.blankrows))p[d++]=x.row}p.length=d;return p}var ac=/"/g;function nc(e,r,t,a,n,i,s,l){var o=true;var c=[],f="",u=ya(t);for(var h=r.s.c;h<=r.e.c;++h){if(!a[h])continue;var p=l.dense?(e[t]||[])[h]:e[a[h]+u];if(p==null)f="";else if(p.v!=null){o=false;f=""+(l.rawNumbers&&p.t=="n"?p.v:Pa(p,null,l));for(var d=0,m=0;d!==f.length;++d)if((m=f.charCodeAt(d))===n||m===i||m===34||l.forceQuotes){f='"'+f.replace(ac,'""')+'"';break}if(f=="ID")f='"ID"'}else if(p.f!=null&&!p.F){o=false;f="="+p.f;if(f.indexOf(",")>=0)f='"'+f.replace(ac,'""')+'"'}else f="";c.push(f)}if(l.blankrows===false&&o)return null;return c.join(s)}function ic(e,r){var t=[];var a=r==null?{}:r;if(e==null||e["!ref"]==null)return"";var n=Ma(e["!ref"]);var i=a.FS!==undefined?a.FS:",",s=i.charCodeAt(0);var l=a.RS!==undefined?a.RS:"\n",o=l.charCodeAt(0);var c=new RegExp((i=="|"?"\\|":i)+"+$");var f="",u=[];a.dense=Array.isArray(e);var h=a.skipHidden&&e["!cols"]||[];var p=a.skipHidden&&e["!rows"]||[];for(var d=n.s.c;d<=n.e.c;++d)if(!(h[d]||{}).hidden)u[d]=Ca(d);var m=0;for(var v=n.s.r;v<=n.e.r;++v){if((p[v]||{}).hidden)continue;f=nc(e,n,v,u,s,o,i,a);if(f==null){continue}if(a.strip)f=f.replace(c,"");if(f||a.blankrows!==false)t.push((m++?l:"")+f)}delete a.dense;return t.join("")}function sc(e,r){if(!r)r={};r.FS="\t";r.RS="\n";var t=ic(e,r);if(typeof $cptable=="undefined"||r.type=="string")return t;var a=$cptable.utils.encode(1200,t,"str");return String.fromCharCode(255)+String.fromCharCode(254)+a}function lc(e){var r="",t,a="";if(e==null||e["!ref"]==null)return[];var n=Ma(e["!ref"]),i="",s=[],l;var o=[];var c=Array.isArray(e);for(l=n.s.c;l<=n.e.c;++l)s[l]=Ca(l);for(var f=n.s.r;f<=n.e.r;++f){i=ya(f);for(l=n.s.c;l<=n.e.c;++l){r=s[l]+i;t=c?(e[f]||[])[l]:e[r];a="";if(t===undefined)continue;else if(t.F!=null){r=t.F;if(!t.f)continue;a=t.f;if(r.indexOf(":")==-1)r=r+":"+r}if(t.f!=null)a=t.f;else if(t.t=="z")continue;else if(t.t=="n"&&t.v!=null)a=""+t.v;else if(t.t=="b")a=t.v?"TRUE":"FALSE";else if(t.w!==undefined)a="'"+t.w;else if(t.v===undefined)continue;else if(t.t=="s")a="'"+t.v;else a=""+t.v;o[o.length]=r+"="+a}}return o}function oc(e,r,t){var a=t||{};var n=+!a.skipHeader;var i=e||{};var s=0,l=0;if(i&&a.origin!=null){if(typeof a.origin=="number")s=a.origin;else{var o=typeof a.origin=="string"?Ea(a.origin):a.origin;s=o.r;l=o.c}}var c;var f={s:{c:0,r:0},e:{c:l,r:s+r.length-1+n}};if(i["!ref"]){var u=Ma(i["!ref"]);f.e.c=Math.max(f.e.c,u.e.c);f.e.r=Math.max(f.e.r,u.e.r);if(s==-1){s=u.e.r+1;f.e.r=s+r.length-1+n}}else{if(s==-1){s=0;f.e.r=r.length-1+n}}var h=a.header||[],p=0;r.forEach(function(e,r){er(e).forEach(function(t){if((p=h.indexOf(t))==-1)h[p=h.length]=t;var o=e[t];var f="z";var u="";var d=Fa({c:l+p,r:s+r+n});c=fc(i,d);if(o&&typeof o==="object"&&!(o instanceof Date)){i[d]=o}else{if(typeof o=="number")f="n";else if(typeof o=="boolean")f="b";else if(typeof o=="string")f="s";else if(o instanceof Date){f="d";if(!a.cellDates){f="n";o=sr(o)}u=a.dateNF||X[14]}else if(o===null&&a.nullError){f="e";o=0}if(!c)i[d]=c={t:f,v:o};else{c.t=f;c.v=o;delete c.w;delete c.R;if(u)c.z=u}if(u)c.z=u}})});f.e.c=Math.max(f.e.c,l+h.length-1);var d=ya(s);if(n)for(p=0;p<h.length;++p)i[Ca(p+l)+d]={t:"s",v:h[p]};i["!ref"]=Oa(f);return i}function cc(e,r){return oc(null,e,r)}function fc(e,r,t){if(typeof r=="string"){if(Array.isArray(e)){var a=Ea(r);if(!e[a.r])e[a.r]=[];return e[a.r][a.c]||(e[a.r][a.c]={t:"z"})}return e[r]||(e[r]={t:"z"})}if(typeof r!="number")return fc(e,Fa(r));return fc(e,Fa({r:r,c:t||0}))}function uc(e,r){if(typeof r=="number"){if(r>=0&&e.SheetNames.length>r)return r;throw new Error("Cannot find sheet # "+r)}else if(typeof r=="string"){var t=e.SheetNames.indexOf(r);if(t>-1)return t;throw new Error("Cannot find sheet name |"+r+"|")}else throw new Error("Cannot find sheet |"+r+"|")}function hc(){return{SheetNames:[],Sheets:{}}}function pc(e,r,t,a){var n=1;if(!t)for(;n<=65535;++n,t=undefined)if(e.SheetNames.indexOf(t="Sheet"+n)==-1)break;if(!t||e.SheetNames.length>=65535)throw new Error("Too many worksheets");if(a&&e.SheetNames.indexOf(t)>=0){var i=t.match(/(^.*?)(\d+)$/);n=i&&+i[2]||0;var s=i&&i[1]||t;for(++n;n<=65535;++n)if(e.SheetNames.indexOf(t=s+n)==-1)break}Tl(t);if(e.SheetNames.indexOf(t)>=0)throw new Error("Worksheet with name |"+t+"| already exists!");e.SheetNames.push(t);e.Sheets[t]=r;return t}function dc(e,r,t){if(!e.Workbook)e.Workbook={};if(!e.Workbook.Sheets)e.Workbook.Sheets=[];var a=uc(e,r);if(!e.Workbook.Sheets[a])e.Workbook.Sheets[a]={};switch(t){case 0:;case 1:;case 2:break;default:throw new Error("Bad sheet visibility setting "+t);}e.Workbook.Sheets[a].Hidden=t}function mc(e,r){e.z=r;return e}function vc(e,r,t){if(!r){delete e.l}else{e.l={Target:r};if(t)e.l.Tooltip=t}return e}function gc(e,r,t){return vc(e,"#"+r,t)}function bc(e,r,t){if(!e.c)e.c=[];e.c.push({t:r,a:t||"SheetJS"})}function wc(e,r,t,a){var n=typeof r!="string"?r:Ma(r);var i=typeof r=="string"?r:Oa(r);for(var s=n.s.r;s<=n.e.r;++s)for(var l=n.s.c;l<=n.e.c;++l){var o=fc(e,s,l);o.t="n";o.F=i;delete o.v;if(s==n.s.r&&l==n.s.c){o.f=t;if(a)o.D=true}}return e}var yc={encode_col:Ca,encode_row:ya,encode_cell:Fa,encode_range:Oa,decode_col:Sa,decode_row:wa,split_cell:Ta,decode_cell:Ea,decode_range:Da,format_cell:Pa,sheet_add_aoa:Ra,sheet_add_json:oc,sheet_add_dom:io,aoa_to_sheet:La,json_to_sheet:cc,table_to_sheet:so,table_to_book:lo,sheet_to_csv:ic,sheet_to_txt:sc,sheet_to_json:tc,sheet_to_html:no,sheet_to_formulae:lc,sheet_to_row_object_array:tc,sheet_get_cell:fc,book_new:hc,book_append_sheet:pc,book_set_sheet_visibility:dc,cell_set_number_format:mc,cell_set_hyperlink:vc,cell_set_internal_link:gc,cell_add_comment:bc,sheet_set_array_formula:wc,consts:{SHEET_VISIBLE:0,SHEET_HIDDEN:1,SHEET_VERY_HIDDEN:2}};if(typeof parse_xlscfb!=="undefined")e.parse_xlscfb=parse_xlscfb;e.parse_zip=Ao;e.read=$o;e.readFile=zo;e.readFileSync=zo;e.write=Ko;e.writeFile=Zo;e.writeFileSync=Zo;e.writeFileAsync=ec;e.utils=yc;e.writeXLSX=Jo;e.writeFileXLSX=Qo;e.SSF=We;if(typeof __stream!=="undefined")e.stream=__stream;if(typeof Ye!=="undefined")e.CFB=Ye;if(typeof require!=="undefined"){var kc=undefined;if((kc||{}).Readable)set_readable(kc.Readable)}}if(typeof exports!=="undefined")make_xlsx_lib(exports);else if(typeof module!=="undefined"&&module.exports)make_xlsx_lib(module.exports);else if(typeof define==="function"&&define.amd)define("xlsx",function(){if(!XLSX.version)make_xlsx_lib(XLSX);return XLSX});else make_xlsx_lib(XLSX);if(typeof window!=="undefined"&&!window.XLSX)try{window.XLSX=XLSX}catch(e){}
 
 </script>
-<script>window.__OPS_CFG__={"dataBase":"data/","pollSeconds":60,"editSha":"232357b8a85e05f0ff657f3a255089698d44a7d85a51e98234d1ab18972c524c","editHint":"登录后即为成员编辑；右上角徽标可切换只读","connectors":{"dingtalk":{"pluginId":"dingtalk@workbuddy-connector-plugins-official","name":"钉钉","scope":"project","use":"商品分组绑定、审批、群通知"},"tmeet":{"pluginId":"tmeet@workbuddy-connector-plugins-official","name":"腾讯会议","scope":"project","use":"周会与复盘"}},"version":"v6.7"};window.__WB_CFG__={"endpoint":"https://ai-ops-workbench-43332.app.workbuddy.host","oauthRelayBaseUrl":"https://www.workbuddy.cn/v2/as/genie-baas/oauth","publishableKey":"wbpk_6H4ne4Pivj47cmkaQcnAzt_7jKCp89XzvWRs5ECfR4aMtEBaeS38dez"};</script>
+<script>window.__OPS_CFG__={"dataBase":"data/","pollSeconds":60,"connectors":{"dingtalk":{"pluginId":"dingtalk@workbuddy-connector-plugins-official","name":"钉钉","scope":"project","use":"商品分组绑定、审批、群通知"},"tmeet":{"pluginId":"tmeet@workbuddy-connector-plugins-official","name":"腾讯会议","scope":"project","use":"周会与复盘"}},"version":"v6.8"};window.__WB_CFG__={"endpoint":"https://ai-ops-workbench-43332.app.workbuddy.host","oauthRelayBaseUrl":"https://www.workbuddy.cn/v2/as/genie-baas/oauth","publishableKey":"wbpk_6H4ne4Pivj47cmkaQcnAzt_7jKCp89XzvWRs5ECfR4aMtEBaeS38dez"};</script>
 <script>
 (function () {
 "use strict";
@@ -1984,6 +1955,10 @@ const store = {
   code: null,        // 自定义样式/脚本：{ css, js, at, by }
   synced: {},        // key -> 上次同步时的 JSON 快照
   _timer: 0, _flushing: null, _again: false, _cfgTimer: 0,
+  _dirty: false,        // 还有没推上云端的改动
+  _del: {},             // key -> 1：本机明确删掉的记录，推完清空
+  _probeSig: '',        // 上次对账时云端 (key,updated_at) 指纹
+  _syncedAt: 0,         // 上次与云端对齐成功的时间
 
   /* 启动时只读本地缓存兜底，云端才是准的（loadCfg 会覆盖） */
   initCfg() {
@@ -2023,20 +1998,17 @@ const store = {
     await kvSet('texts', this.texts);
   },
   async setText(k, v) {
-    if (!canEdit()) { denyWrite(); return; }
     const val = String(v == null ? '' : v).trim();
     if (val) this.texts[k] = val; else delete this.texts[k];
     try { await this.saveTexts(); } catch (e) { toast('文案保存失败：' + ((e && e.message) || e), 'bad'); }
   },
   async saveCode(css, js) {
-    if (!canEdit()) { denyWrite(); return; }
     this.code = { css: css || '', js: js || '', at: Date.now(), by: myName() };
     this.cacheTeam();
     if (!cloud) { toast('已存在本机（云端未连接）', 'ok'); return; }
     await kvSet('code', this.code);
   },
   async clearCode() {
-    if (!canEdit()) { denyWrite(); return; }
     this.code = null;
     this.cacheTeam();
     if (cloud) await kvSet('code', { css: '', js: '', at: Date.now(), by: myName() });
@@ -2056,7 +2028,6 @@ const store = {
   },
   /* 改配置：本地缓存即时生效，400ms 后写云端，全组同步 */
   saveCfg() {
-    if (!canEdit()) { denyWrite(); return; }
     this.cfgCache();
     clearTimeout(this._cfgTimer);
     this._cfgTimer = setTimeout(() => { this.pushCfg(); }, 400);
@@ -2118,6 +2089,7 @@ const store = {
       this.synced[r.key] = JSON.stringify(r.data);
     });
     this.db = db;
+    this._dirty = false;
     this.db.meta = (await kvGet('meta').catch(() => null)) || { ver: DB_VER };
     await this.loadCfg();
     this.cacheLocal();
@@ -2137,25 +2109,28 @@ const store = {
   save() {
     clearTimeout(this._timer);
     this._lastWrite = Date.now();
+    this._dirty = true;
     this._timer = setTimeout(() => { this.flush(); }, 300);
   },
   async flush() {
-    if (!cloud) { this.cacheLocal(); return; }
+    if (!cloud) { this._dirty = false; this.cacheLocal(); return; }
     if (this._flushing) { this._again = true; return this._flushing; }
     this._flushing = (async () => {
       do {
         this._again = false;
-        const ups = [], seen = {};
+        const ups = [];
         KINDS.forEach(k => (this.db[k] || []).forEach(rec => {
           if (!rec || !rec.id) return;
           const key = k + ':' + rec.id;
-          seen[key] = 1;
           const j = JSON.stringify(rec);
           if (this.synced[key] !== j) {
             ups.push({ key: key, coll: k, rec_id: String(rec.id), data: rec, updated_at: new Date().toISOString(), updated_by: myName() });
           }
         }));
-        const dels = Object.keys(this.synced).filter(k => !seen[k]);
+        /* 只删「本机明确删掉的」那些行。
+           以前按「本机没有 = 别人删了」推断，本地一旦拿到旧快照，
+           就会把同事刚加的行删掉，结果两个人各看到各的版本。 */
+        const dels = Object.keys(this._del);
         for (let i = 0; i < ups.length; i += 200) {
           const part = ups.slice(i, i + 200);
           const r = await cloud.database.from('wb_records').upsert(part);
@@ -2166,8 +2141,9 @@ const store = {
           const part = dels.slice(i, i + 200);
           const r = await cloud.database.from('wb_records').delete().in('key', part);
           if (r.error) throw r.error;
-          part.forEach(k => { delete this.synced[k]; });
+          part.forEach(k => { delete this.synced[k]; delete this._del[k]; });
         }
+        this._dirty = false;
       } while (this._again);
     })().catch(e => {
       this.cloudErr = (e && e.message) || String(e);
@@ -2184,36 +2160,52 @@ const store = {
   list(k) { return (this.db[k] || []).slice(); },
   get(k, id) { return (this.db[k] || []).find(x => x.id === id) || null; },
   add(k, obj) {
-    if (!canEdit()) { denyWrite(); return null; }
     const rec = Object.assign({ id: uid(k[0]) }, obj, { __mt: Date.now(), __src: 'ui' });
     this.db[k].unshift(rec); this.save(); return rec;
   },
   update(k, id, patch) {
-    if (!canEdit()) { denyWrite(); return null; }
     const r = this.get(k, id); if (!r) return null;
     Object.assign(r, patch, { __mt: Date.now() }); this.save(); return r;
   },
   remove(k, id) {
-    if (!canEdit()) { denyWrite(); return; }
-    this.db[k] = this.db[k].filter(x => x.id !== id); this.save();
+    this.db[k] = (this.db[k] || []).filter(x => x.id !== id);
+    this._del[k + ':' + id] = 1;   // 明确记一笔，免得被别人的旧快照复活
+    this.save();
   },
   upsertMetric(rec) {
-    if (!canEdit()) { denyWrite(); return null; }
     const hit = this.db.metrics.find(m => m.shop === rec.shop && m.date === rec.date);
     if (hit) { Object.assign(hit, rec, { __mt: Date.now() }); this.save(); return 'update'; }
     this.db.metrics.push(Object.assign({ id: uid('m') }, rec, { __mt: Date.now(), __src: 'ui' })); this.save(); return 'insert';
   },
   clearAll() {
-    if (!canEdit()) { denyWrite(); return; }
-    KINDS.forEach(k => { this.db[k] = []; });
+    KINDS.forEach(k => {
+      (this.db[k] || []).forEach(r => { if (r && r.id) this._del[k + ':' + r.id] = 1; });
+      this.db[k] = [];
+    });
     this.db.meta = { seed: false, ver: DB_VER };
     this.save();
+  },
+
+  /* 轻量对账：只取 (key, updated_at)，几百行也就十几 KB。
+     指纹变了才去拉全量，省流量也省云端查询。 */
+  async probe() {
+    if (!cloud) return '';
+    const rows = [];
+    for (let from = 0; ; from += PAGE_ROWS) {
+      const r = await cloud.database.from('wb_records')
+        .select('key,updated_at').order('key').range(from, from + PAGE_ROWS - 1);
+      if (r.error) throw r.error;
+      const part = r.data || [];
+      rows.push.apply(rows, part);
+      if (part.length < PAGE_ROWS) break;
+    }
+    return rows.length + '|' + rows.map(r => r.key + '@' + (r.updated_at || '')).join(',');
   }
 };
 
-/* 只读模式下的统一拦截：任何漏掉的写入口都走这里，不会静默改数据 */
+/* 写权限已统一为「登录即可写」，这里只在真没权限时兜底提示 */
 function denyWrite() {
-  toast('只读预览：当前没有编辑权限。项目成员点右上角模式徽标输码进入编辑。', 'bad');
+  toast('这一笔没写进云端，请确认已登录团队账号后再试', 'bad');
 }
 
 /* 「我是谁」：记在本机、不进云端；写库时带上改动人，方便追溯是谁改的。
@@ -2899,7 +2891,6 @@ function cfgBar() {
 /* ---------- 表格单元格内联编辑（点一下就能改，像 Excel） ----------
    用法：<td class="cell" data-cell="集合:记录id:字段" data-type="num" data-maxlen="4"> */
 function openCellEdit(cell) {
-  if (!canEdit()) { denyWrite(); return; }
   const parts = String(cell.dataset.cell || '').split(':');
   if (parts.length < 3) return;
   const coll = parts[0], id = parts[1], field = parts[2];
@@ -3608,7 +3599,6 @@ function impMiniTable(rows, obj) {
 
 /* ---------- 执行 ---------- */
 function doStoreImport(close) {
-  if (!canEdit()) { denyWrite(); return; }
   const rows = impState.parsed;
   if (!rows || !rows.length) { toast('还没有可导入的内容', 'bad'); return; }
 
@@ -4732,13 +4722,24 @@ document.addEventListener('click', e => {
     return;
   }
 
-  /* 设置页：立即检查数据源（只读模式下也允许，纯读取） */
+  /* 设置页：立即检查数据源 */
   const dr = e.target.closest('[data-datarefresh]');
   if (dr) {
     refreshDataCsv(false).then(changed => {
       renderDataStatus();
       if (!changed) toast(dataCache ? '已是最新（' + dataCache.version + '）' : '数据源未连上：' + dataErr, changed ? 'ok' : 'bad');
     });
+    return;
+  }
+
+  /* 设置页：从数据源重建（同 id 行会被 CSV 覆盖，也会把删过的行带回来） */
+  const drb = e.target.closest('[data-datarebuild]');
+  if (drb) {
+    confirmDialog('从数据源重建',
+      '会用 data/*.csv 里的内容按 id 覆盖现有记录，并把 CSV 里有、库里没有的行补回来。平时不需要这么做，只有在 CSV 才是准的时候才用。',
+      () => {
+        refreshDataCsv(false, 'full').then(() => toast('已按数据源重建 · 全组同步', 'ok'));
+      }, '确认重建');
     return;
   }
 
@@ -4749,11 +4750,6 @@ document.addEventListener('click', e => {
 
 document.addEventListener('change', e => {
   if (e.target.id === 'drillSel') { window.__drillShop = e.target.value; renderDrill(); return; }
-
-  /* 只读模式下即使改了控件也不落库，直接把界面恢复成库里的值 */
-  if (!canEdit() && e.target.closest('[data-tgt],[data-range],[data-text]')) {
-    denyWrite(); render(); return;
-  }
 
   /* 设置页：文案改动 → 存云端 → 立即刷新界面上对应文字 */
   const tx = e.target.closest('[data-text]');
@@ -4839,7 +4835,6 @@ const auth = {
   async logout() {
     try { await cloud.auth.signOut(); } catch (e) {}
     this.session = null;
-    try { localStorage.removeItem(LS_EDIT); } catch (e) {}
     location.reload();
   }
 };
@@ -4963,37 +4958,63 @@ function hideLoading() { const el = $('#boot'); if (el) el.remove(); }
 /* 侧栏底部的「我」：名字（账号名优先）+ 云端状态 */
 function setUserCard() {
   const name = myName();
-  const av = $('#uAv'), nm = $('#uName'), rl = $('#uRole');
+  const av = $('#uAv'), nm = $('#uName');
   if (av) av.textContent = String(name).slice(0, 1);
   if (nm) nm.textContent = name;
-  if (rl) {
-    rl.textContent = !cloud
-      ? '本机模式'
-      : (store.cloudErr ? '未连云端 · 存本机' : '云端已同步');
-  }
+  updateSyncHint();
 }
 
-/* 拉取同事的最新改动：无弹窗、无正在编辑的输入、无待写入时才做，避免冲掉手上的内容 */
+/* 与云端对账：只有一种数据源（团队云端库），谁改所有人都看到。
+   每 15 秒查一次「指纹」，有变化才拉全量；本机有没推上去的改动时先推再拉，
+   不抢用户正在输入的内容，不弹窗。 */
+const SYNC_POLL_MS = 15000;
 async function pullLatest(silent) {
-  if (!cloud || store._flushing) return false;
-  if (Date.now() - (store._lastWrite || 0) < 2000) return false;
+  if (!cloud) return false;
+  if (store._flushing) return false;
   if (document.querySelector('.modal-bd')) return false;
   const ae = document.activeElement;
   if (ae && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)) return false;
+
+  /* 本机还有没推上去的改动：先推，推不上去就别拉，避免把自己刚改的冲掉 */
+  if (store._dirty) {
+    try { await store.flush(); } catch (e) {}
+    if (store._dirty) return false;
+  }
+
+  let sig = '';
+  try { sig = await store.probe(); }
+  catch (e) { store.cloudErr = (e && e.message) || String(e); return false; }
+  if (sig && sig === store._probeSig) { store._syncedAt = Date.now(); updateSyncHint(); return false; }
+
   const snap = JSON.stringify(store.db) + '|' + JSON.stringify(store.cfg);
   const oldCode = JSON.stringify(store.code);
-  try { await store.hydrate({ noSeed: true }); } catch (e) { return false; }
+  try { await store.hydrate({ noSeed: true }); }
+  catch (e) { store.cloudErr = (e && e.message) || String(e); return false; }
+  store._probeSig = sig;
+  store._syncedAt = Date.now();
   await store.loadTeam();
-  /* 云端拿到的是「界面改过的」部分，再把 CSV 数据源合回来（CSV 只覆盖更旧的记录） */
-  if (typeof mergeCsvData === 'function') mergeCsvData();
   applyTexts();
   if (JSON.stringify(store.code) !== oldCode) applyUserCode();
-  if (snap === JSON.stringify(store.db) + '|' + JSON.stringify(store.cfg)) return false;
-  if (!store.cloudErr) hideCloudNotice();
-  render();
+  store.cacheLocal();
   setUserCard();
-  if (!silent) toast('已同步同事的最新改动', 'ok');
-  return true;
+
+  const changed = snap !== JSON.stringify(store.db) + '|' + JSON.stringify(store.cfg);
+  if (!store.cloudErr) hideCloudNotice();
+  if (changed) render();
+  updateSyncHint();
+  if (changed && !silent) toast('已同步同事的最新改动', 'ok');
+  return changed;
+}
+
+/* 侧栏「我」下面那行：云端同步状态 + 上次对齐时间 */
+function updateSyncHint() {
+  const rl = $('#uRole');
+  if (!rl) return;
+  if (!cloud) { rl.textContent = '本机模式'; return; }
+  if (store.cloudErr) { rl.textContent = '未连云端 · 存本机'; return; }
+  const t = store._syncedAt;
+  rl.textContent = '云端已同步' + (t ? ' · ' + agoText(t) : '');
+  rl.title = '所有人共用同一份云端数据，每 ' + Math.round(SYNC_POLL_MS / 1000) + ' 秒自动对账一次';
 }
 
 /* 云端未就绪时的常驻提示条 */
@@ -5047,19 +5068,20 @@ async function retryCloud() {
   else toast('云端已接通，团队数据已同步', 'ok');
 }
 
-/* 登录成功后：解锁编辑 → 同步数据 → 起界面 */
+/* 登录成功后：同步数据 → 起界面。登录即成员，读写一律放行 */
 async function enterApp(session) {
   if (!session) return;
   store.session = session;
-  setEditMode(true, true);   /* 登录 = 成员，直接可编辑 */
   const g = $('#gate'); if (g) g.remove();
   showLoading('正在同步团队数据…');
   let r = null;
   try { r = await store.hydrate(); }
   catch (e) { r = null; store.cloudErr = (e && e.message) || String(e); }
   await store.loadTeam();
-  /* 数据源：先把 CSV 合进来再画第一帧，避免先闪一下旧数据 */
-  try { await loadDataCsv(true); mergeCsvData(); } catch (e) {}
+  /* 数据源只在云端还没有数据时用来播种，避免把界面上删掉的行又从 CSV 补回来 */
+  try { await loadDataCsv(true); mergeCsvData('auto'); } catch (e) {}
+  try { store._probeSig = await store.probe(); } catch (e) {}
+  store._syncedAt = Date.now();
   hideLoading();
   setUserCard();
   startApp();
@@ -5099,9 +5121,12 @@ function startApp() {
 
   go('signal');
 
-  /* 团队协作：每 60 秒与云端对一次，切回标签页时立刻对一次 */
-  setInterval(() => { if (!document.hidden) pullLatest(false); }, 60000);
+  /* 团队协作：每 15 秒对一次指纹，切回标签页 / 网络恢复时立刻对一次 */
+  setInterval(() => { if (!document.hidden) pullLatest(true); }, SYNC_POLL_MS);
+  setInterval(() => { if (!document.hidden) updateSyncHint(); }, 30000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) pullLatest(true); });
+  window.addEventListener('online', () => pullLatest(false));
+  window.addEventListener('focus', () => pullLatest(true));
 
   /* 首帧先无动画落位，下一帧再淡入并恢复过渡，避免滑块从左上方飞入 */
   requestAnimationFrame(() => {
@@ -5223,30 +5248,29 @@ function renderSettings() {
   <div class="block-title" style="margin-top:26px">数据源（团队 CSV）</div>
   <div class="set-panel">
     <div id="dataStatus"></div>
-    <div class="set-tip">CSV 放在仓库 <code>data/</code> 目录。成员改完提交，1–2 分钟发布后，所有人的页面会在 60 秒内自动刷新。<br>
-      合并规则：同一行「谁更晚谁生效」——界面改动时间晚于 CSV 发布时间就保留界面版本，否则用 CSV 覆盖；界面上新建的行不会被 CSV 删除。</div>
+    <div class="set-tip">云端库是唯一数据源：谁改都写进同一份，所有人 15 秒内看到。<br>
+      CSV 只在云端这一类还没有数据时用来播种，平时不会覆盖或补回任何行（删掉的不会被补回来）。<br>
+      确实要用 CSV 重建时，点下面的「从数据源重建」，同 id 的行会被 CSV 版本覆盖。</div>
     <div class="set-acts">
       <button class="btn" data-datarefresh>立即检查数据源</button>
+      <button class="btn" data-datarebuild>从数据源重建（覆盖同 id 行）</button>
     </div>
   </div>
 
-  <div class="block-title" style="margin-top:26px">访问与权限</div>
+  <div class="block-title" style="margin-top:26px">协作方式</div>
   <div class="set-panel">
     <table class="set-tbl"><tbody>
-      <tr><td class="set-lb">当前模式</td><td><b id="modeNow">—</b></td><td class="set-def">右上角徽标可切换</td></tr>
-      <tr><td class="set-lb">外部访问</td><td>只读预览</td><td class="set-def">链接发给谁，谁都能看，但改不了</td></tr>
-      <tr><td class="set-lb">项目成员</td><td>输入团队编辑码后可编辑</td><td class="set-def">数据 / 页面 / 文案 / 代码</td></tr>
+      <tr><td class="set-lb">谁能改</td><td><b>登录的组内成员都能增删改</b></td><td class="set-def">没有只读模式，也不需要编辑码</td></tr>
+      <tr><td class="set-lb">数据在哪</td><td>团队云端库（同一份）</td><td class="set-def">店铺 / 账号 / 指标 / 任务 都在这里</td></tr>
+      <tr><td class="set-lb">怎么同步</td><td>每 15 秒自动对账</td><td class="set-def">切回页面、网络恢复时立刻对一次</td></tr>
+      <tr><td class="set-lb">删除</td><td>删了就是删了</td><td class="set-def">别人下一次对账就会看到它消失，不会被本机旧数据带回</td></tr>
     </tbody></table>
   </div>
 
   <div class="set-tip" style="margin-top:22px">
     自定义代码存在云端，全组共用一份；谁改的会记在 <b>${esc((c.by || '—'))}</b>${c.at ? ' · ' + esc(agoText(c.at)) : ''}。
   </div>`;
-  setTimeout(() => {
-    renderDataStatus();
-    const m = document.getElementById('modeNow');
-    if (m) m.textContent = canEdit() ? '成员编辑' : '只读预览';
-  }, 0);
+  setTimeout(() => { renderDataStatus(); }, 0);
   return html;
 }
 
@@ -5390,8 +5414,14 @@ async function loadDataCsv(force) {
    2) CSV 里没有的 id：只有「上次确实来自 CSV」的行才会被删除；
       界面上新建/历史遗留的行一律保留，绝不因为一次同步丢数据
    返回被改动的行数 */
-function mergeCsvData() {
+/* 把 CSV 合并进内存库。
+   mode='auto'（默认）：只在云端这一类还没有数据时用来播种。
+     云端是唯一真相 —— 界面上删掉的行不会被 CSV 又补回来，
+     否则两个人会各看到各的版本。
+   mode='full'：手动「从数据源重建」，按 id 覆盖/补行（会带回被删过的行，慎用） */
+function mergeCsvData(mode) {
   if (!dataCache || !dataCache.byKind) return 0;
+  const full = mode === 'full';
   const mfAt = dataCache.publishedAt;
   let touched = 0;
 
@@ -5399,6 +5429,7 @@ function mergeCsvData() {
     const rows = dataCache.byKind[kind];
     if (!rows || !rows.length) return;
     if (!Array.isArray(store.db[kind])) store.db[kind] = [];
+    if (!full && store.db[kind].length) return;
 
     const list = store.db[kind];
     const byId = {};
@@ -5438,18 +5469,19 @@ function mergeCsvData() {
   return touched;
 }
 
-/* 检查一次：有更新就合并 + 重渲染。
+/* 检查一次：有新版本就按规则合并 + 重渲染。
    silent=true 用于轮询，不给弹窗、不在用户打字时打断。 */
-async function refreshDataCsv(silent) {
+async function refreshDataCsv(silent, mode) {
   const changed = await loadDataCsv(false);
   if (!changed) { renderDataStatus(); return false; }
   const ae = document.activeElement;
   const typing = ae && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName);
   if (typing && silent) return false;                 // 等用户打完字下一轮再说
-  const n = mergeCsvData();
+  const n = mergeCsvData(mode || 'auto');
+  if (n) store.save();
   render();
   renderDataStatus();
-  if (!silent && n) toast('数据源已更新 · ' + n + ' 行 · 版本 ' + dataCache.version, 'ok');
+  if (!silent) toast(n ? '数据源已更新 · ' + n + ' 行 · 版本 ' + dataCache.version : '数据源已是最新（' + dataCache.version + '）', 'ok');
   return true;
 }
 
@@ -5490,122 +5522,29 @@ function startDataSync() {
 }
 
 /* =========================================================
-   访问模式：只读预览 / 成员编辑
-   - 登录 = 成员身份，进入应用即解锁编辑（写权限由登录态保证）
-   - 右上角徽标可在「成员编辑 / 只读预览」之间切换（只影响这台设备）
-   - 云端库本身的权限要求登录态，未登录的请求到不了数据
+   访问权限：只有一种身份 —— 登录的组内成员，都能改
+   - 取消原来的「成员编辑 / 只读预览」双模式与编辑码
+   - 谁能打开：能登录的人；登录后增删改一律放行
+   - 数据只有一份：团队云端库，谁改所有人看到（同步在 22-auth.js）
    ========================================================= */
 
-const LS_EDIT = 'wb.signal.v3.edit';
-const MODE = { unlocked: false, verified: false };
+/* 保留同名接口，老的调用点、自定义脚本、测试都不用改 */
+function canEdit() { return true; }
 
-function editSha() {
-  const c = window.__OPS_CFG__ || {};
-  return String(c.editSha || '').toLowerCase();
-}
-function editHint() {
-  const c = window.__OPS_CFG__ || {};
-  return String(c.editHint || '团队编辑码向项目管理员索取');
-}
-function canEdit() { return !!MODE.unlocked; }
-
-function readEditFlag() {
-  try { return localStorage.getItem(LS_EDIT) === '1'; } catch (e) { return false; }
-}
-function writeEditFlag(on) {
-  try {
-    if (on) localStorage.setItem(LS_EDIT, '1'); else localStorage.removeItem(LS_EDIT);
-  } catch (e) {}
-}
-
-async function sha256Hex(s) {
-  if (!(window.crypto && window.crypto.subtle)) {
-    throw new Error('当前页面不是 https / localhost，浏览器不允许校验编辑码');
-  }
-  const buf = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-function normCode(s) { return String(s == null ? '' : s).trim().toLowerCase(); }
-
-/* 把「只读」这件事落到界面上：隐藏写入口、改光标、禁用设置页输入 */
+/* 清掉历史版本可能留在 body 上的只读标记与徽标 */
 function applyMode() {
-  const ro = !canEdit();
-  document.body.classList.toggle('ro', ro);
+  document.body.classList.remove('ro');
   const pill = document.getElementById('modePill');
-  if (pill) {
-    pill.textContent = ro ? '只读预览' : '成员编辑';
-    pill.classList.toggle('on', !ro);
-    pill.title = ro
-      ? '当前是只读预览：可以看全部数据，不能修改。项目成员点这里输入编辑码。'
-      : '当前是成员编辑模式：你的改动会写入团队云端。点这里退回只读。';
-  }
+  if (pill) pill.remove();
   const tip = document.getElementById('roTip');
-  if (tip) tip.style.display = ro ? '' : 'none';
+  if (tip) tip.remove();
 }
 
-function setEditMode(on, quiet) {
-  MODE.unlocked = !!on;
-  writeEditFlag(!!on);
-  applyMode();
-  if (!quiet) toast(on ? '已进入成员编辑模式' : '已切回只读预览', on ? 'ok' : '');
-  render();
-}
+function setEditMode() { applyMode(); }
+function initMode() { applyMode(); }
 
-/* 输码解锁 */
-function askEditCode() {
-  const hint = editHint();
-  openModal({
-    title: '进入成员编辑模式',
-    body: `<div style="font-size:12.5px;line-height:1.85;color:var(--ink2);margin-bottom:10px">
-        这是团队内部工作台，外部链接默认<b>只读预览</b>。<br>输入团队编辑码后，你就能改数据、改页面、改设置，改动会写进团队云端，所有人都看得到。
-      </div>
-      <input id="ecInp" type="password" autocomplete="off" placeholder="团队编辑码"
-        style="width:100%;height:34px;padding:0 10px;border:1px solid var(--line2);border-radius:8px;background:var(--card);color:var(--ink);font-size:13px;outline:none;font-family:var(--mono)" />
-      <div style="font-size:11.5px;color:var(--ink3);margin-top:9px;line-height:1.7">${esc(hint)}</div>`,
-    buttons: [
-      { label: '只读就行', cls: 'ghost' },
-      { label: '解锁', cls: 'primary', fn: c => {
-        const v = ($('#ecInp') || {}).value;
-        tryUnlock(v).then(ok => {
-          if (ok) { c(); setEditMode(true); }
-        });
-      } }
-    ]
-  });
-  setTimeout(() => { const i = $('#ecInp'); if (i) i.focus(); }, 160);
-}
-
-async function tryUnlock(code) {
-  const v = normCode(code);
-  if (!v) { toast('请先输入编辑码', 'bad'); return false; }
-  let h = '';
-  try { h = await sha256Hex(v); }
-  catch (e) { toast(e.message, 'bad'); return false; }
-  if (h !== editSha()) {
-    toast('编辑码不对，或你只有查看权限', 'bad');
-    return false;
-  }
-  return true;
-}
-
-/* 首次进来：恢复本机记住的编辑状态（只认本机开关，不认链接参数）
-   支持 ?edit=1 只是给管理员收藏用的快捷入口，仍需输码 */
-function initMode() {
-  MODE.unlocked = readEditFlag();
-  applyMode();
-  if (window.__modeInit) return;
-  window.__modeInit = 1;
-  const pill = document.getElementById('modePill');
-  if (pill) {
-    pill.addEventListener('click', () => {
-      if (canEdit()) {
-        confirmDialog('退回只读预览', '退出编辑模式后，这个人在这台设备上就只能看、不能改。随时可以再输码进来。', () => setEditMode(false), '退回只读');
-      } else {
-        askEditCode();
-      }
-    });
-  }
-}
+/* 编辑码入口已下线，留空实现避免旧代码报错 */
+async function tryUnlock() { return true; }
 
 /* ---------- init ---------- */
 store.initCfg();
@@ -5623,7 +5562,7 @@ window.__OPS__ = {
   KINDS: KINDS, PAGES: PAGES,
   TX: TX, applyTexts: applyTexts, applyUserCode: applyUserCode,
   canEdit: canEdit, setEditMode: setEditMode, tryUnlock: tryUnlock, dataCache: () => dataCache,
-  refreshDataCsv: refreshDataCsv, dataStatusText: dataStatusText,
+  refreshDataCsv: refreshDataCsv, mergeCsvData: mergeCsvData, dataStatusText: dataStatusText,
   $: $, $$: $$, esc: esc, uid: uid, num: num, openForm: openForm, openModal: openModal
 };
 })();

@@ -89,32 +89,4 @@ td.cell:hover{background:var(--panel3);box-shadow:inset 0 0 0 1px var(--line2)}
 td.cell.editing{background:var(--panel);box-shadow:inset 0 0 0 1px var(--amber);padding:2px 4px}
 .cell-inp{width:100%;min-width:60px;height:24px;padding:0 4px;border:none;border-radius:3px;background:transparent;color:var(--ink);font-size:inherit;font-family:inherit;outline:none}
 
-/* ---------- 访问模式徽标（只读预览 / 成员编辑） ---------- */
-.mode-pill{
-  height:24px;padding:0 10px;border-radius:12px;cursor:pointer;
-  border:1px solid var(--line2);background:var(--panel);color:var(--ink2);
-  font-size:11px;font-family:inherit;white-space:nowrap;line-height:22px;
-  transition:.12s linear;
-}
-.mode-pill:hover{border-color:var(--amber);color:var(--ink)}
-.mode-pill.on{background:var(--good-soft);border-color:var(--good);color:var(--good)}
-body.ro .mode-pill{background:var(--panel3)}
-
-/* 只读预览：隐藏所有写入口，保留完整浏览体验 */
-body.ro .acts,
-body.ro [data-new],
-body.ro [data-del],
-body.ro [data-edit],
-body.ro [data-done],
-body.ro [data-import],
-body.ro [data-clear-seed],
-body.ro [data-textreset],
-body.ro [data-codesave],
-body.ro [data-codeclear]{display:none !important}
-body.ro td.cell{cursor:default}
-body.ro td.cell:hover{background:transparent;box-shadow:none}
-body.ro .set-inp,
-body.ro .set-code,
-body.ro #cfgBar input,
-body.ro #cfgBar select{pointer-events:none;opacity:.65}
-body.ro .cfgbar-tip{display:none}
+/* 访问模式已取消：登录即可读写，全组共用一份云端数据 */

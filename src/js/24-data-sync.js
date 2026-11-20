@@ -138,8 +138,14 @@ async function loadDataCsv(force) {
    2) CSV 里没有的 id：只有「上次确实来自 CSV」的行才会被删除；
       界面上新建/历史遗留的行一律保留，绝不因为一次同步丢数据
    返回被改动的行数 */
-function mergeCsvData() {
+/* 把 CSV 合并进内存库。
+   mode='auto'（默认）：只在云端这一类还没有数据时用来播种。
+     云端是唯一真相 —— 界面上删掉的行不会被 CSV 又补回来，
+     否则两个人会各看到各的版本。
+   mode='full'：手动「从数据源重建」，按 id 覆盖/补行（会带回被删过的行，慎用） */
+function mergeCsvData(mode) {
   if (!dataCache || !dataCache.byKind) return 0;
+  const full = mode === 'full';
   const mfAt = dataCache.publishedAt;
   let touched = 0;
 
@@ -147,6 +153,7 @@ function mergeCsvData() {
     const rows = dataCache.byKind[kind];
     if (!rows || !rows.length) return;
     if (!Array.isArray(store.db[kind])) store.db[kind] = [];
+    if (!full && store.db[kind].length) return;
 
     const list = store.db[kind];
     const byId = {};
@@ -186,18 +193,19 @@ function mergeCsvData() {
   return touched;
 }
 
-/* 检查一次：有更新就合并 + 重渲染。
+/* 检查一次：有新版本就按规则合并 + 重渲染。
    silent=true 用于轮询，不给弹窗、不在用户打字时打断。 */
-async function refreshDataCsv(silent) {
+async function refreshDataCsv(silent, mode) {
   const changed = await loadDataCsv(false);
   if (!changed) { renderDataStatus(); return false; }
   const ae = document.activeElement;
   const typing = ae && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName);
   if (typing && silent) return false;                 // 等用户打完字下一轮再说
-  const n = mergeCsvData();
+  const n = mergeCsvData(mode || 'auto');
+  if (n) store.save();
   render();
   renderDataStatus();
-  if (!silent && n) toast('数据源已更新 · ' + n + ' 行 · 版本 ' + dataCache.version, 'ok');
+  if (!silent) toast(n ? '数据源已更新 · ' + n + ' 行 · 版本 ' + dataCache.version : '数据源已是最新（' + dataCache.version + '）', 'ok');
   return true;
 }
 

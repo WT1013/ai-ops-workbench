@@ -122,13 +122,24 @@ document.addEventListener('click', e => {
     return;
   }
 
-  /* 设置页：立即检查数据源（只读模式下也允许，纯读取） */
+  /* 设置页：立即检查数据源 */
   const dr = e.target.closest('[data-datarefresh]');
   if (dr) {
     refreshDataCsv(false).then(changed => {
       renderDataStatus();
       if (!changed) toast(dataCache ? '已是最新（' + dataCache.version + '）' : '数据源未连上：' + dataErr, changed ? 'ok' : 'bad');
     });
+    return;
+  }
+
+  /* 设置页：从数据源重建（同 id 行会被 CSV 覆盖，也会把删过的行带回来） */
+  const drb = e.target.closest('[data-datarebuild]');
+  if (drb) {
+    confirmDialog('从数据源重建',
+      '会用 data/*.csv 里的内容按 id 覆盖现有记录，并把 CSV 里有、库里没有的行补回来。平时不需要这么做，只有在 CSV 才是准的时候才用。',
+      () => {
+        refreshDataCsv(false, 'full').then(() => toast('已按数据源重建 · 全组同步', 'ok'));
+      }, '确认重建');
     return;
   }
 
@@ -139,11 +150,6 @@ document.addEventListener('click', e => {
 
 document.addEventListener('change', e => {
   if (e.target.id === 'drillSel') { window.__drillShop = e.target.value; renderDrill(); return; }
-
-  /* 只读模式下即使改了控件也不落库，直接把界面恢复成库里的值 */
-  if (!canEdit() && e.target.closest('[data-tgt],[data-range],[data-text]')) {
-    denyWrite(); render(); return;
-  }
 
   /* 设置页：文案改动 → 存云端 → 立即刷新界面上对应文字 */
   const tx = e.target.closest('[data-text]');
